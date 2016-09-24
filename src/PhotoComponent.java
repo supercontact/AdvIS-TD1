@@ -15,6 +15,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -29,13 +31,13 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private static final long serialVersionUID = 1L;
 	
 	public int frameWidth = 20;
-	public int fps = 60;
-	public long flippingAnimationTime = 400;
 	public double imageScaleX = 1;
 	public double imageScaleY = 1;
 	public int imageScaleMinimumLevel = -10;
 	public int imageScaleMaximumLevel = 10;
 	public double scaleFactorPerLevel = 1.2;
+	public int fps = 60;
+	public long flippingAnimationTime = 400;
 	
 	private PhotoBrowserModel model;
 	private Image background;
@@ -43,14 +45,14 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private Timer timer;
 	
 	private Point prevMousePos;
+	private int scaleLevel = 0;
+	private boolean isLocked = false;
 	private boolean isFlippingToBack = false;
 	private boolean isFlippingToFront = false;
-	private boolean isLocked = false;
 	private long flippingAnimationProgress = 0;
 	private double imageScaleXBeforeFlipping = 1;
 	private AnnotatedPhoto.StrokeMark currentStroke;
 	private boolean canStartStroke = false;
-	private int scaleLevel = 0;
 	
 
 	public PhotoComponent() {
@@ -130,9 +132,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private void paintPhoto(Graphics graphics) {
 		Rectangle rect = calculateImageRect();
 		Image img = model.getAnnotatedPhoto().image;
-		if (rect.width != img.getWidth(null)) {
+		/*if (rect.width != img.getWidth(null)) {
 			img = img.getScaledInstance(rect.width, rect.height, Image.SCALE_SMOOTH);
-		}
+		}*/
 		
 		graphics.drawImage(img, rect.x, rect.y, rect.width, rect.height, null);
 	}
@@ -173,14 +175,19 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		List<AnnotatedPhoto.StrokeMark> strokes = model.getAnnotatedPhoto().strokes;
 		if (model.flipped) {
 			for (AnnotatedPhoto.StrokeMark stroke : strokes) {
-				Stroke strokeType = new BasicStroke(stroke.width);
+				int strokeWidth = Math.max((int)(stroke.width * imageScaleY), 1);
+				Stroke strokeType = new BasicStroke(strokeWidth);
 				g.setStroke(strokeType);
 				g.setColor(stroke.color);
-				for (int i = 0; i < stroke.path.size() - 1; i++) {
-					Point p1 = toComponentCoordinates(stroke.path.get(i));
-					Point p2 = toComponentCoordinates(stroke.path.get(i + 1));
-					g.drawLine(p1.x, p1.y, p2.x, p2.y);
+				
+				Path2D line = new Path2D.Double();
+				Point p0 = toComponentCoordinates(stroke.path.get(0));
+				line.moveTo(p0.x, p0.y);
+				for (int i = 1; i < stroke.path.size(); i++) {
+					Point p = toComponentCoordinates(stroke.path.get(i));
+					line.lineTo(p.x, p.y);
 				}
+				g.draw(line);
 			}
 		}
 	}
