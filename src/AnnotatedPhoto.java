@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -38,8 +39,12 @@ public class AnnotatedPhoto implements Serializable {
 		
 		private static final long serialVersionUID = 1L;
 		
-		public int x1, y1, x2, y2;
+		public ArrayList<Point> path;
 		public Color color;
 		public float width;
+		
+		public StrokeMark() {
+			path = new ArrayList<Point>();
+		}
 	}
 }

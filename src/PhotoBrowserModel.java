@@ -9,7 +9,7 @@ public class PhotoBrowserModel {
 	}
 	
 	AnnotatedAlbum album;
-	int currentViewingIndex = 0;
+	int currentViewingIndex = -1;
 	boolean flipped = false;
 	ViewMode mode = ViewMode.PhotoViewer;
 	
@@ -20,6 +20,7 @@ public class PhotoBrowserModel {
 	
 	public void addPhotos(File[] url) {
 		currentViewingIndex = album.photoList.size();
+		flipped = false;
 		for (int i = 0; i < url.length; i++) {
 			AnnotatedPhoto newPhoto = new AnnotatedPhoto(url[i]);
 			album.photoList.add(newPhoto);
