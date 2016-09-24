@@ -15,7 +15,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.io.File;
 import java.io.IOException;
@@ -61,7 +60,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			background = ImageIO.read(FileSystems.getDefault().getPath("data", "resources", "bg.jpg").toFile());
 			frame = ImageIO.read(FileSystems.getDefault().getPath("data", "resources", "frame.png").toFile());
 		} catch (IOException e) {
-			System.out.println("Background loading error!");
+			System.out.println("Resources loading error!");
 		}
 		
 		addMouseListener(this);
@@ -130,13 +129,13 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	
 	private void paintPhoto(Graphics graphics) {
+		Graphics2D g = (Graphics2D)graphics;
+		
 		Rectangle rect = calculateImageRect();
 		Image img = model.getAnnotatedPhoto().image;
-		/*if (rect.width != img.getWidth(null)) {
-			img = img.getScaledInstance(rect.width, rect.height, Image.SCALE_SMOOTH);
-		}*/
 		
-		graphics.drawImage(img, rect.x, rect.y, rect.width, rect.height, null);
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g.drawImage(img, rect.x, rect.y, rect.width, rect.height, null);
 	}
 	
 	private void paintPhotoBack(Graphics graphics) {
@@ -151,6 +150,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		Rectangle rect = calculateImageRect();
 		int frameWidthX = (int)(frameWidth * imageScaleX);
 		int frameWidthY = (int)(frameWidth * imageScaleY);
+		
+		// 9-sliced Image
 		int[] fx = new int[] {0, frameWidth, 2 * frameWidth, 3 * frameWidth};
 		int[] fy = new int[] {0, frameWidth, 2 * frameWidth, 3 * frameWidth};
 		int[] ix = new int[] {rect.x - frameWidthX, rect.x, rect.x + rect.width, rect.x + rect.width + frameWidthX};
@@ -168,17 +169,15 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	
 	private void paintStrokes(Graphics graphics) {
 		Graphics2D g = (Graphics2D)graphics;
-		RenderingHints rh = new RenderingHints(
-	             RenderingHints.KEY_ANTIALIASING,
-	             RenderingHints.VALUE_ANTIALIAS_ON);
-	    g.setRenderingHints(rh);
+	    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+	    
 		List<AnnotatedPhoto.StrokeMark> strokes = model.getAnnotatedPhoto().strokes;
 		if (model.flipped) {
 			for (AnnotatedPhoto.StrokeMark stroke : strokes) {
-				int strokeWidth = Math.max((int)(stroke.width * imageScaleY), 1);
-				Stroke strokeType = new BasicStroke(strokeWidth);
+				Stroke strokeType = new BasicStroke((float)(stroke.width * imageScaleY));
 				g.setStroke(strokeType);
 				g.setColor(stroke.color);
+				g.setClip(calculateImageRect());
 				
 				Path2D line = new Path2D.Double();
 				Point p0 = toComponentCoordinates(stroke.path.get(0));
@@ -188,6 +187,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 					line.lineTo(p.x, p.y);
 				}
 				g.draw(line);
+				g.setClip(null);
 			}
 		}
 	}
@@ -247,24 +247,17 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		if (model.flipped) {
-			Rectangle rect = calculateImageRect();
+		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.flipped) {
 			if (canStartStroke) {
-				if (rect.contains(e.getPoint())) {
-					if (currentStroke == null) {
-						currentStroke = new AnnotatedPhoto.StrokeMark();
-						currentStroke.width = 5; // Will let the user choose in the future
-						currentStroke.color = Color.black; // Will let the user choose in the future
-						if (rect.contains(prevMousePos)) {
-							currentStroke.path.add(toImageCoordinates(prevMousePos));
-						}
-						model.getAnnotatedPhoto().strokes.add(currentStroke);
-					}
-					currentStroke.path.add(toImageCoordinates(e.getPoint()));
-					repaint();
-				} else {
-					currentStroke = null;
+				if (currentStroke == null) {
+					currentStroke = new AnnotatedPhoto.StrokeMark();
+					currentStroke.width = 5; // Will let the user choose in the future
+					currentStroke.color = Color.black; // Will let the user choose in the future
+					currentStroke.path.add(toImageCoordinates(prevMousePos));
+					model.getAnnotatedPhoto().strokes.add(currentStroke);
 				}
+				currentStroke.path.add(toImageCoordinates(e.getPoint()));
+				repaint();
 				prevMousePos = e.getPoint();
 			}
 		}
@@ -299,20 +292,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	// ActionLister: Execute in loop
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		/*if (isShowing()) {
-			Point mousePos = MouseInfo.getPointerInfo().getLocation();
-			mousePos.x -= getLocationOnScreen().x;
-			mousePos.y -= getLocationOnScreen().y;
-
-			Rectangle rect = calculateImageRect();
-			if (pressed && rect.contains(prevMousePos) && !rect.contains(mousePos)) {
-				// The mouse is dragging out of the photo
-				flipPhoto();
-			}
-
-			prevMousePos = mousePos;
-		}*/
-
 		if (isFlippingToBack || isFlippingToFront) {
 			if (flippingAnimationProgress < flippingAnimationTime) {
 				flippingAnimationProgress += 1000 / fps;

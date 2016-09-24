@@ -14,7 +14,7 @@ public class AnnotatedPhoto implements Serializable {
 
 	public File imageURL;
 	public ArrayList<String> tags;
-	public String annotation = "";
+	public ArrayList<Annotation> annotations;
 	public ArrayList<StrokeMark> strokes;
 	
 	transient public BufferedImage image;
@@ -22,6 +22,7 @@ public class AnnotatedPhoto implements Serializable {
 	public AnnotatedPhoto(File url) {
 		imageURL = url;
 		tags = new ArrayList<>();
+		annotations = new ArrayList<>();
 		strokes = new ArrayList<>();
 	}
 	
@@ -41,10 +42,20 @@ public class AnnotatedPhoto implements Serializable {
 		
 		public ArrayList<Point> path;
 		public Color color;
-		public float width;
+		public double width;
 		
 		public StrokeMark() {
 			path = new ArrayList<Point>();
 		}
+	}
+	
+	public static class Annotation implements Serializable {
+
+		private static final long serialVersionUID = 1L;
+		
+		public String text;
+		public Color color;
+		public int size;
+		
 	}
 }
