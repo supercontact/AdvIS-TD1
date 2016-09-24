@@ -1,6 +1,8 @@
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -10,6 +12,8 @@ import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -25,7 +29,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.Timer;
 
-public class PhotoComponent extends JComponent implements MouseListener, MouseMotionListener, MouseWheelListener, ActionListener {
+public class PhotoComponent extends JComponent implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener, ActionListener {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -37,6 +41,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public double scaleFactorPerLevel = 1.2;
 	public int fps = 60;
 	public long flippingAnimationTime = 400;
+	public double lineSpacing = 1.2;
 	
 	private PhotoBrowserModel model;
 	private Image background;
@@ -48,9 +53,11 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private boolean isLocked = false;
 	private boolean isFlippingToBack = false;
 	private boolean isFlippingToFront = false;
+	private boolean isEditingText = false;
 	private long flippingAnimationProgress = 0;
 	private double imageScaleXBeforeFlipping = 1;
 	private AnnotatedPhoto.StrokeMark currentStroke;
+	private AnnotatedPhoto.Annotation currentAnnotation;
 	private boolean canStartStroke = false;
 	
 
@@ -66,6 +73,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		addMouseListener(this);
 		addMouseMotionListener(this);
 		addMouseWheelListener(this);
+		addKeyListener(this);
+		setFocusable(true);
 		timer = new Timer(1000 / fps, this);
 		timer.setInitialDelay(10);
 		timer.start(); 
@@ -74,21 +83,33 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public void addPhotos(File[] url) {
 		model.addPhotos(url);
 		
-		imageScaleX = 1;
-		imageScaleY = 1;
+		resetState();
 		
 		updateComponentSize();
 		revalidate();
 		repaint();
 	}
 	
+	public void resetState() {
+		imageScaleX = 1;
+		imageScaleY = 1;
+		scaleLevel = 0;
+		isEditingText = false;
+		currentAnnotation = null;
+	}
+	
 	public void updateComponentSize() {
-		Image img = model.getAnnotatedPhoto().image;
-		int imgW = img.getWidth(null);
-		int imgH = img.getHeight(null);
-		
-		int w = (int)((imgW + 2 * frameWidth) * imageScaleX);
-		int h = (int)((imgH + 2 * frameWidth) * imageScaleY);
+		int w, h;
+		if (model.currentViewingIndex >= 0) {
+			Image img = model.getAnnotatedPhoto().image;
+			int imgW = img.getWidth(null);
+			int imgH = img.getHeight(null);
+			w = (int)((imgW + 2 * frameWidth) * imageScaleX);
+			h = (int)((imgH + 2 * frameWidth) * imageScaleY);
+		} else {
+			w = 0;
+			h = 0;
+		}
 		setMinimumSize(new Dimension(w, h));
 		setPreferredSize(new Dimension(w, h));
 	}
@@ -104,6 +125,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			} else {
 				paintPhotoBack(graphics);
 				paintStrokes(graphics);
+				paintAnnotations(graphics);
 			}
 			paintPhotoFrame(graphics);
 		}
@@ -192,8 +214,61 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		}
 	}
 	
+	private void paintAnnotations(Graphics graphics) {
+		Graphics2D g = (Graphics2D)graphics;
+		Rectangle rect = calculateImageRect();
+		
+		List<AnnotatedPhoto.Annotation> annotations = model.getAnnotatedPhoto().annotations;
+		if (model.flipped) {
+			for (AnnotatedPhoto.Annotation annotation : annotations) {
+				Font font = new Font("SansSerif", Font.PLAIN, (int)(annotation.size * imageScaleY));
+				g.setFont(font);
+				g.setColor(annotation.color);
+				g.setClip(calculateImageRect());
+				FontMetrics metrics = g.getFontMetrics();
+				
+				Point pos = toComponentCoordinates(annotation.position);
+				String[] lines = annotation.text.split("\\n");
+				lineSweep:
+				for (int i = 0; i < lines.length; i++) {				
+					int length = trimString(lines[i], rect.x + rect.width - pos.x, metrics);
+					if (length == 0) break; // Too close to the right border!
+					if (length < lines[i].length()) {
+						g.drawString(lines[i].substring(0, length), pos.x, pos.y);
+						
+						// Get rid of all the excessive space.
+						while (lines[i].charAt(length) == ' ') {
+							length++;
+							if (length == lines[i].length()) continue lineSweep;
+						}
+						lines[i] = lines[i].substring(length);
+						i--;
+					} else {
+						g.drawString(lines[i], pos.x, pos.y);
+					}
+					
+					pos.y += (int)(annotation.size * imageScaleX * lineSpacing);
+				}
+				g.setClip(null);
+			}
+		}
+	}
+	
+	// Find the best prefix of the string that fits in the given space. End with a space if possible.
+	private int trimString(String str, int spaceInPixel, FontMetrics metrics) {
+		while (metrics.stringWidth(str) > spaceInPixel) {
+			int cutIndex = str.lastIndexOf(' ');
+			if (cutIndex == -1) {
+				cutIndex = str.length() - 1;
+			}
+			str = str.substring(0, cutIndex);
+		}
+		return str.length();
+	}
+	
 	public void flipPhoto() {
 		if (!isLocked) {
+			isEditingText = false;
 			imageScaleXBeforeFlipping = imageScaleY;
 			if (!model.flipped) {
 				isFlippingToBack = true;
@@ -226,11 +301,23 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	
 
+	
 	// MouseListener & MouseMotionListener & MouseWheelListener: Mouse events
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		if (e.getClickCount() % 2 == 0 && model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.currentViewingIndex >= 0) {
-			flipPhoto();
+		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.currentViewingIndex >= 0) {
+			if (e.getClickCount() == 1 && model.flipped && !isLocked) {
+				isEditingText = true;
+				requestFocusInWindow();
+				AnnotatedPhoto.Annotation annotation = new AnnotatedPhoto.Annotation();
+				annotation.color = Color.black; // Will change
+				annotation.position = toImageCoordinates(e.getPoint());
+				annotation.size = 20; // Will change
+				annotation.text = "";
+				currentAnnotation = annotation;
+			} else if (e.getClickCount() % 2 == 0) {
+				flipPhoto();
+			}
 		}
 	}
 	@Override
@@ -289,7 +376,43 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	
 	
-	// ActionLister: Execute in loop
+	
+	// KeyListener: Keyboard events
+	@Override
+	public void keyTyped(KeyEvent e) {
+		System.out.println((int)e.getKeyChar());
+		if (isEditingText) {
+			char c = e.getKeyChar();
+			if ((int)c == KeyEvent.VK_BACK_SPACE) {
+				if (currentAnnotation.text.length() > 0) {
+					currentAnnotation.text = currentAnnotation.text.substring(0, currentAnnotation.text.length() - 1);
+				}
+				if (currentAnnotation.text.length() == 0) {
+					model.getAnnotatedPhoto().annotations.remove(currentAnnotation);
+				}
+				repaint();
+			} else if (c != KeyEvent.CHAR_UNDEFINED) {
+				if (currentAnnotation.text.length() == 0) {
+					model.getAnnotatedPhoto().annotations.add(currentAnnotation);
+				}
+				currentAnnotation.text += e.getKeyChar();
+				repaint();
+			}
+			
+		}
+	}
+	@Override
+	public void keyPressed(KeyEvent e) {
+		// Do nothing
+	}
+	@Override
+	public void keyReleased(KeyEvent e) {
+		// Do nothing
+	}
+	
+	
+	
+	// ActionLister: Animation control, execute in loop.
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (isFlippingToBack || isFlippingToFront) {

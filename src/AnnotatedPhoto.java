@@ -56,6 +56,6 @@ public class AnnotatedPhoto implements Serializable {
 		public String text;
 		public Color color;
 		public int size;
-		
+		public Point position;
 	}
 }
