@@ -12,6 +12,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -30,7 +31,7 @@ public class PhotoApplication extends JFrame{
     JMenuItem photoItem = new JMenuItem("Photo viewer");
     JMenuItem browserItem = new JMenuItem("Browser");
     JMenuItem splitItem = new JMenuItem("Split mode");
-    JPanel body = new JPanel();
+    JScrollPane body = new JScrollPane();
     PhotoComponent photoView = new PhotoComponent();
     JToolBar tool = new JToolBar();
     ArrayList<JToggleButton> categories = new ArrayList<>(); 
@@ -120,8 +121,7 @@ public class PhotoApplication extends JFrame{
     	add(body, BorderLayout.CENTER);
         add(status, BorderLayout.SOUTH);
         
-        body.setLayout(new BorderLayout());
-        body.add(photoView, BorderLayout.CENTER);
+        body.setViewportView(photoView);
        
         showStatusText("Status");
     }

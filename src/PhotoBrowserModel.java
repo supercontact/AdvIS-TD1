@@ -10,6 +10,7 @@ public class PhotoBrowserModel {
 	
 	AnnotatedAlbum album;
 	int currentViewingIndex = 0;
+	boolean flipped = false;
 	ViewMode mode = ViewMode.PhotoViewer;
 	
 	
