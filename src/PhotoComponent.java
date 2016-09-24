@@ -13,6 +13,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -22,16 +24,18 @@ import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.Timer;
 
-public class PhotoComponent extends JComponent implements MouseListener, MouseMotionListener, ActionListener {
+public class PhotoComponent extends JComponent implements MouseListener, MouseMotionListener, MouseWheelListener, ActionListener {
 
 	private static final long serialVersionUID = 1L;
 	
 	public int frameWidth = 20;
 	public int fps = 60;
-	public long doubleClickInterval = 300;
 	public long flippingAnimationTime = 400;
 	public double imageScaleX = 1;
 	public double imageScaleY = 1;
+	public int imageScaleMinimumLevel = -10;
+	public int imageScaleMaximumLevel = 10;
+	public double scaleFactorPerLevel = 1.2;
 	
 	private PhotoBrowserModel model;
 	private Image background;
@@ -43,8 +47,10 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private boolean isFlippingToFront = false;
 	private boolean isLocked = false;
 	private long flippingAnimationProgress = 0;
+	private double imageScaleXBeforeFlipping = 1;
 	private AnnotatedPhoto.StrokeMark currentStroke;
 	private boolean canStartStroke = false;
+	private int scaleLevel = 0;
 	
 
 	public PhotoComponent() {
@@ -58,6 +64,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		
 		addMouseListener(this);
 		addMouseMotionListener(this);
+		addMouseWheelListener(this);
 		timer = new Timer(1000 / fps, this);
 		timer.setInitialDelay(10);
 		timer.start(); 
@@ -65,21 +72,24 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	
 	public void addPhotos(File[] url) {
 		model.addPhotos(url);
-		viewPhoto();
-	}
-	
-	public void viewPhoto() {
-		Image img = model.getAnnotatedPhoto().image;
-		int imgW = img.getWidth(null);
-		int imgH = img.getHeight(null);
-		setMinimumSize(new Dimension(imgW + 2 * frameWidth, imgH + 2 * frameWidth));
-		setPreferredSize(new Dimension(imgW + 2 * frameWidth, imgH + 2 * frameWidth));
 		
 		imageScaleX = 1;
 		imageScaleY = 1;
 		
+		updateComponentSize();
 		revalidate();
 		repaint();
+	}
+	
+	public void updateComponentSize() {
+		Image img = model.getAnnotatedPhoto().image;
+		int imgW = img.getWidth(null);
+		int imgH = img.getHeight(null);
+		
+		int w = (int)((imgW + 2 * frameWidth) * imageScaleX);
+		int h = (int)((imgH + 2 * frameWidth) * imageScaleY);
+		setMinimumSize(new Dimension(w, h));
+		setPreferredSize(new Dimension(w, h));
 	}
 
 	@Override
@@ -118,8 +128,11 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	
 	private void paintPhoto(Graphics graphics) {
-		Image img = model.getAnnotatedPhoto().image;
 		Rectangle rect = calculateImageRect();
+		Image img = model.getAnnotatedPhoto().image;
+		if (rect.width != img.getWidth(null)) {
+			img = img.getScaledInstance(rect.width, rect.height, Image.SCALE_SMOOTH);
+		}
 		
 		graphics.drawImage(img, rect.x, rect.y, rect.width, rect.height, null);
 	}
@@ -174,6 +187,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	
 	public void flipPhoto() {
 		if (!isLocked) {
+			imageScaleXBeforeFlipping = imageScaleY;
 			if (!model.flipped) {
 				isFlippingToBack = true;
 			} else {
@@ -204,44 +218,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		return new Point((int)(p.x * imageScaleX + rect.x), (int)(p.y * imageScaleY + rect.y));
 	}
 	
-	
-	// ActionLister: Execute in loop
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		/*if (isShowing()) {
-			Point mousePos = MouseInfo.getPointerInfo().getLocation();
-			mousePos.x -= getLocationOnScreen().x;
-			mousePos.y -= getLocationOnScreen().y;
-			
-			Rectangle rect = calculateImageRect();
-			if (pressed && rect.contains(prevMousePos) && !rect.contains(mousePos)) {
-				// The mouse is dragging out of the photo
-				flipPhoto();
-			}
-			
-			prevMousePos = mousePos;
-		}*/
-		
-		if (isFlippingToBack || isFlippingToFront) {
-			if (flippingAnimationProgress < flippingAnimationTime) {
-				flippingAnimationProgress += 1000 / fps;
-				flippingAnimationProgress = Math.min(flippingAnimationProgress, flippingAnimationTime);
-			}
-			model.flipped = (2 * flippingAnimationProgress < flippingAnimationTime) ? isFlippingToFront : isFlippingToBack;
-			imageScaleX = Math.abs(Math.cos(Math.PI * flippingAnimationProgress / flippingAnimationTime));
-			repaint();
-			if (flippingAnimationProgress == flippingAnimationTime) {
-				flippingAnimationProgress = 0;
-				isFlippingToBack = false;
-				isFlippingToFront = false;
-				isLocked = false;
-				imageScaleX = 1;
-			}
-		}
-	}
-	
 
-	// MouseListener & MouseMotionListener: Mouse events
+	// MouseListener & MouseMotionListener & MouseWheelListener: Mouse events
 	@Override
 	public void mouseClicked(MouseEvent e) {
 		if (e.getClickCount() % 2 == 0 && model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.currentViewingIndex >= 0) {
@@ -285,6 +263,19 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		}
 	}
 	@Override
+	public void mouseWheelMoved(MouseWheelEvent e) {
+		scaleLevel -= e.getWheelRotation();
+		scaleLevel = Math.max(scaleLevel, imageScaleMinimumLevel);
+		scaleLevel = Math.min(scaleLevel, imageScaleMaximumLevel);
+		
+		imageScaleX = Math.pow(scaleFactorPerLevel, scaleLevel);
+		imageScaleY = Math.pow(scaleFactorPerLevel, scaleLevel);
+		
+		updateComponentSize();
+		revalidate();
+		repaint();
+	}
+	@Override
 	public void mouseEntered(MouseEvent e) {
 		// Do nothing
 	}
@@ -295,5 +286,41 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	@Override
 	public void mouseMoved(MouseEvent e) {
 		// Do nothing
+	}
+	
+	
+	// ActionLister: Execute in loop
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		/*if (isShowing()) {
+			Point mousePos = MouseInfo.getPointerInfo().getLocation();
+			mousePos.x -= getLocationOnScreen().x;
+			mousePos.y -= getLocationOnScreen().y;
+
+			Rectangle rect = calculateImageRect();
+			if (pressed && rect.contains(prevMousePos) && !rect.contains(mousePos)) {
+				// The mouse is dragging out of the photo
+				flipPhoto();
+			}
+
+			prevMousePos = mousePos;
+		}*/
+
+		if (isFlippingToBack || isFlippingToFront) {
+			if (flippingAnimationProgress < flippingAnimationTime) {
+				flippingAnimationProgress += 1000 / fps;
+				flippingAnimationProgress = Math.min(flippingAnimationProgress, flippingAnimationTime);
+			}
+			model.flipped = (2 * flippingAnimationProgress < flippingAnimationTime) ? isFlippingToFront : isFlippingToBack;
+			imageScaleX = imageScaleXBeforeFlipping * Math.abs(Math.cos(Math.PI * flippingAnimationProgress / flippingAnimationTime));
+			repaint();
+			if (flippingAnimationProgress == flippingAnimationTime) {
+				flippingAnimationProgress = 0;
+				isFlippingToBack = false;
+				isFlippingToFront = false;
+				isLocked = false;
+				imageScaleX = imageScaleXBeforeFlipping;
+			}
+		}
 	}
 }
