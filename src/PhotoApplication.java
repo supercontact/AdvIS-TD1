@@ -88,7 +88,7 @@ public class PhotoApplication extends JFrame{
         viewMenu.add(splitItem);
         
         photoItem.addActionListener(
-        		event -> showStatusText("Switched to photo viewer mode (Not yet supported).")
+        		event -> showStatusText("Switched to photo viewer mode.")
         );
         browserItem.addActionListener(
         		event -> showStatusText("Switched to browser mode (Not yet supported).")

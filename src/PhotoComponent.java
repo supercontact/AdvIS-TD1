@@ -60,6 +60,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private double imageScaleXBeforeFlipping = 1;
 	private AnnotatedPhoto.StrokeMark currentStroke;
 	private AnnotatedPhoto.Annotation currentAnnotation;
+	private int annotationEditingPos = 0;
+	private Point annotationEditingPoint;
 	private boolean canStartStroke = false;
 	
 
@@ -136,6 +138,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				paintPhotoBack(graphics);
 				paintStrokes(graphics);
 				paintAnnotations(graphics);
+				if (isEditingText) {
+					paintEditingMark(graphics);
+				}
 			}
 			paintPhotoFrame(graphics);
 		}
@@ -238,36 +243,73 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				FontMetrics metrics = g.getFontMetrics();
 				
 				Point pos = toComponentCoordinates(annotation.position);
-				String[] lines = annotation.text.split("\\n");
-				lineSweep:
-				for (int i = 0; i < lines.length; i++) {				
-					int length = trimString(lines[i], rect.x + rect.width - pos.x, metrics);
-					if (length == 0) break; // Too close to the right border!
-					if (length < lines[i].length()) {
-						g.drawString(lines[i].substring(0, length), pos.x, pos.y);
-						
-						// Get rid of all the excessive space.
-						while (lines[i].charAt(length) == ' ') {
+				String str = annotation.text;
+				int startPosInAnnotation = 0;
+				
+				while (str.length() > 0) {
+					int length = trimString(str, rect.x + rect.width - pos.x, metrics);
+					if (str.charAt(0) != '\n' && length == 0) break; // Too close to the right border!
+					
+					// Get rid of all the excessive space if it is not following \n
+					if (str.charAt(length - 1) != '\n') {
+						while (length < str.length() && str.charAt(length) == ' ') {
 							length++;
-							if (length == lines[i].length()) continue lineSweep;
 						}
-						lines[i] = lines[i].substring(length);
-						i--;
-					} else {
-						g.drawString(lines[i], pos.x, pos.y);
 					}
 					
-					pos.y += (int)(annotation.size * imageScaleX * lineSpacing);
+					g.drawString(str.substring(0, length), pos.x, pos.y);
+					
+					// Calculate the editing mark's position on the image
+					if (isEditingText && annotation == currentAnnotation && annotationEditingPos >= startPosInAnnotation) {
+						if (annotationEditingPos == startPosInAnnotation + length && length == str.length() && str.charAt(str.length() - 1) == '\n') {
+							annotationEditingPoint = toImageCoordinates(new Point(pos.x, pos.y + (int)(annotation.size * imageScaleY * lineSpacing)));
+						} else if (annotationEditingPos < startPosInAnnotation + length || length == str.length()) {
+							String sub = str.substring(0, annotationEditingPos - startPosInAnnotation);
+							annotationEditingPoint = toImageCoordinates(new Point(pos.x + metrics.stringWidth(sub), pos.y));
+						}
+					}
+					
+					startPosInAnnotation += length;
+					str = str.substring(length);
+					pos.y += (int)(annotation.size * imageScaleY * lineSpacing);
 				}
+				
 				g.setClip(null);
 			}
 		}
 	}
 	
+	private void paintEditingMark(Graphics graphics) {
+		if (annotationEditingPoint != null) {
+			Graphics2D g = (Graphics2D)graphics;
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g.setColor(Color.BLACK);
+			g.setClip(calculateImageRect());
+	
+			Point[] triangle = new Point[] {
+					new Point(annotationEditingPoint.x, annotationEditingPoint.y),
+					new Point(annotationEditingPoint.x - 5, annotationEditingPoint.y + 7),
+					new Point(annotationEditingPoint.x + 5, annotationEditingPoint.y + 7)
+			};
+			int[] triangleXs = new int[3], triangleYs = new int[3];
+			for (int i = 0; i < 3; i++) {
+				Point p = toComponentCoordinates(triangle[i]);
+				triangleXs[i] = p.x;
+				triangleYs[i] = p.y;
+			}
+			g.fillPolygon(triangleXs, triangleYs, 3);
+			g.setClip(null);
+		}
+	}
+	
 	// Find the best prefix of the string that fits in the given space. End with a space if possible.
 	private int trimString(String str, int spaceInPixel, FontMetrics metrics) {
+		int cutIndex = str.indexOf('\n');
+		if (cutIndex >= 0) {
+			str = str.substring(0, cutIndex + 1);
+		}
 		while (metrics.stringWidth(str) > spaceInPixel) {
-			int cutIndex = str.lastIndexOf(' ');
+			cutIndex = str.lastIndexOf(' ');
 			if (cutIndex == -1) {
 				cutIndex = str.length() - 1;
 			}
@@ -318,13 +360,17 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		requestFocusInWindow();
 		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.currentViewingIndex >= 0) {
 			if (e.getClickCount() == 1 && model.flipped && !isLocked) {
+				Point imagePoint = toImageCoordinates(e.getPoint());
 				isEditingText = true;
 				AnnotatedPhoto.Annotation annotation = new AnnotatedPhoto.Annotation();
 				annotation.color = Color.black; // Will change
-				annotation.position = toImageCoordinates(e.getPoint());
+				annotation.position = imagePoint;
 				annotation.size = 20; // Will change
 				annotation.text = "";
 				currentAnnotation = annotation;
+				annotationEditingPos = 0;
+				annotationEditingPoint = imagePoint;
+				repaint();
 			} else if (e.getClickCount() % 2 == 0) {
 				flipPhoto();
 			}
@@ -346,17 +392,20 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public void mouseDragged(MouseEvent e) {
 		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer) {
 			if (canStartStroke && model.flipped) {
+				// Drawing stroke
 				if (currentStroke == null) {
 					currentStroke = new AnnotatedPhoto.StrokeMark();
 					currentStroke.width = 5; // Will let the user choose in the future
 					currentStroke.color = Color.black; // Will let the user choose in the future
 					currentStroke.path.add(toImageCoordinates(prevMousePos));
 					model.getAnnotatedPhoto().strokes.add(currentStroke);
+					isEditingText = false;
 				}
 				currentStroke.path.add(toImageCoordinates(e.getPoint()));
 				repaint();
 				prevMousePos = e.getPoint();
 			} else {
+				// Scrolling the photo
 				Rectangle visible = getVisibleRect();
 				visible.x -= e.getPoint().x - prevMousePos.x;
 				visible.y -= e.getPoint().y - prevMousePos.y;
@@ -398,18 +447,27 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		if (isEditingText) {
 			char c = e.getKeyChar();
 			if ((int)c == KeyEvent.VK_BACK_SPACE) {
-				if (currentAnnotation.text.length() > 0) {
-					currentAnnotation.text = currentAnnotation.text.substring(0, currentAnnotation.text.length() - 1);
+				if (annotationEditingPos > 0) {
+					currentAnnotation.text = currentAnnotation.text.substring(0, annotationEditingPos - 1)
+							+  currentAnnotation.text.substring(annotationEditingPos, currentAnnotation.text.length());
+					annotationEditingPos--;
 				}
 				if (currentAnnotation.text.length() == 0) {
 					model.getAnnotatedPhoto().annotations.remove(currentAnnotation);
+					annotationEditingPoint = currentAnnotation.position;
 				}
 				repaint();
 			} else if (c != KeyEvent.CHAR_UNDEFINED) {
 				if (currentAnnotation.text.length() == 0) {
 					model.getAnnotatedPhoto().annotations.add(currentAnnotation);
 				}
-				currentAnnotation.text += e.getKeyChar();
+				if (annotationEditingPos == currentAnnotation.text.length()) {
+					currentAnnotation.text += e.getKeyChar();
+				} else {
+					currentAnnotation.text = currentAnnotation.text.substring(0, annotationEditingPos) + e.getKeyChar() + 
+							currentAnnotation.text.substring(annotationEditingPos, currentAnnotation.text.length());
+				}
+				annotationEditingPos++;
 				repaint();
 			}
 		}
@@ -423,6 +481,14 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
 				model.prevPhoto();
 				reinit();
+			}
+		} else {
+			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+				annotationEditingPos = Math.min(annotationEditingPos + 1, currentAnnotation.text.length());
+				repaint();
+			} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+				annotationEditingPos = Math.max(annotationEditingPos - 1, 0);
+				repaint();
 			}
 		}
 		e.consume();
