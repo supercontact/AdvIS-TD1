@@ -22,7 +22,6 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.Path2D;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -64,8 +63,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public PhotoComponent() {
 		model = new PhotoBrowserModel();
 		try {
-			background = ImageIO.read(FileSystems.getDefault().getPath("data", "resources", "bg.jpg").toFile());
-			frame = ImageIO.read(FileSystems.getDefault().getPath("data", "resources", "frame.png").toFile());
+			background = ImageIO.read(GlobalSettings.backgroundImageLocation);
+			frame = ImageIO.read(GlobalSettings.frameImageLocation);
 		} catch (IOException e) {
 			System.out.println("Resources loading error!");
 		}
@@ -380,7 +379,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	// KeyListener: Keyboard events
 	@Override
 	public void keyTyped(KeyEvent e) {
-		System.out.println((int)e.getKeyChar());
 		if (isEditingText) {
 			char c = e.getKeyChar();
 			if ((int)c == KeyEvent.VK_BACK_SPACE) {

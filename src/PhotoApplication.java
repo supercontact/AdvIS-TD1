@@ -36,6 +36,7 @@ public class PhotoApplication extends JFrame{
     ArrayList<JToggleButton> categories = new ArrayList<>(); 
 
     public static void main(String[] args) {
+    	SavedSettings.loadSettings();
         new PhotoApplication();
     }
    
@@ -131,6 +132,7 @@ public class PhotoApplication extends JFrame{
 	
 	public void importImages() {
 		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setCurrentDirectory(SavedSettings.settings.defaultFileLocation);
 		fileChooser.setMultiSelectionEnabled(true);
 		fileChooser.setAcceptAllFileFilterUsed(false);
 		fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Image files", "jpg", "jpeg", "png", "gif", "bmp"));
@@ -146,6 +148,8 @@ public class PhotoApplication extends JFrame{
 		}
 		File[] files = fileChooser.getSelectedFiles();
 		photoView.addPhotos(files);
+		SavedSettings.settings.defaultFileLocation = files[0].getParentFile();
+		SavedSettings.saveSettings();
 		showStatusText(files.length + " photo(s) are selected (currently only showing the first photo).");
 	}
 
