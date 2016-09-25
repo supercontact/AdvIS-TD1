@@ -70,7 +70,13 @@ public class PhotoApplication extends JFrame{
         		event -> importImages()
         );
         deleteItem.addActionListener(
-        		event -> showStatusText("Deleting current photo...(Not yet supported)")
+        		event -> {
+        			if (photoView.deleteCurrentPhoto()) {
+        				showStatusText("Photo removed (The original file is still there).");
+        			} else {
+        				showStatusText("No photo to remove!");
+        			}
+        		}
         );
         quitItem.addActionListener(
         		event -> dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING))
@@ -118,6 +124,7 @@ public class PhotoApplication extends JFrame{
     }
     
     private void setupMainArea() {
+    	body.setWheelScrollingEnabled(false);
     	add(body, BorderLayout.CENTER);
         add(status, BorderLayout.SOUTH);
         
@@ -150,7 +157,7 @@ public class PhotoApplication extends JFrame{
 		photoView.addPhotos(files);
 		SavedSettings.settings.defaultFileLocation = files[0].getParentFile();
 		SavedSettings.saveSettings();
-		showStatusText(files.length + " photo(s) are selected (currently only showing the first photo).");
+		showStatusText(files.length + " photo(s) are selected. Showing the first photo.");
 	}
 
 }

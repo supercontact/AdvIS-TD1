@@ -28,6 +28,18 @@ public class PhotoBrowserModel {
 		}
 	}
 	
+	public boolean deletePhoto() {
+		return deletePhoto(currentViewingIndex);
+	}
+	public boolean deletePhoto(int index) {
+		if (index < 0) return false;
+		album.photoList.remove(index);
+		if (album.photoList.size() <= currentViewingIndex) {
+			currentViewingIndex--;
+		}
+		return true;
+	}
+	
 	public int getPhotoCount() {
 		return album.photoList.size();
 	}
@@ -39,11 +51,16 @@ public class PhotoBrowserModel {
 		return album.photoList.get(index);
 	}
 	
-	public void deleteAnnotatedPhoto() {
-		// TODO
+	public void nextPhoto() {
+		if (currentViewingIndex != -1) {
+			currentViewingIndex = (currentViewingIndex + 1) % album.photoList.size();
+		}
 	}
-	public void deleteAnnotatedPhoto(int index) {
-		// TODO
+	
+	public void prevPhoto() {
+		if (currentViewingIndex != -1) {
+			currentViewingIndex = (currentViewingIndex - 1 + album.photoList.size()) % album.photoList.size();
+		}
 	}
 	
 	public boolean saveAlbum(File url) {

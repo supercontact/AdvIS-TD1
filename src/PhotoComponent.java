@@ -22,6 +22,7 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.Path2D;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -35,12 +36,14 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public int frameWidth = 20;
 	public double imageScaleX = 1;
 	public double imageScaleY = 1;
-	public int imageScaleMinimumLevel = -10;
-	public int imageScaleMaximumLevel = 10;
-	public double scaleFactorPerLevel = 1.2;
+	public int imageScaleMinimumLevel = -20;
+	public int imageScaleMaximumLevel = 20;
+	public double scaleFactorPerLevel = 1.1;
 	public int fps = 60;
 	public long flippingAnimationTime = 400;
 	public double lineSpacing = 1.2;
+	public File backgroundImageLocation = FileSystems.getDefault().getPath("data", "resources", "bg.jpg").toFile();
+	public File frameImageLocation = FileSystems.getDefault().getPath("data", "resources", "frame.png").toFile();
 	
 	private PhotoBrowserModel model;
 	private Image background;
@@ -63,8 +66,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public PhotoComponent() {
 		model = new PhotoBrowserModel();
 		try {
-			background = ImageIO.read(GlobalSettings.backgroundImageLocation);
-			frame = ImageIO.read(GlobalSettings.frameImageLocation);
+			background = ImageIO.read(backgroundImageLocation);
+			frame = ImageIO.read(frameImageLocation);
 		} catch (IOException e) {
 			System.out.println("Resources loading error!");
 		}
@@ -81,20 +84,28 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	
 	public void addPhotos(File[] url) {
 		model.addPhotos(url);
-		
-		resetState();
-		
-		updateComponentSize();
-		revalidate();
-		repaint();
+		requestFocusInWindow();
+		reinit();
 	}
 	
-	public void resetState() {
+	public boolean deleteCurrentPhoto() {
+		if (model.deletePhoto()) {
+			reinit();
+			return true;
+		}
+		return false;
+	}
+	
+	public void reinit() {
 		imageScaleX = 1;
 		imageScaleY = 1;
 		scaleLevel = 0;
+		model.flipped = false;
 		isEditingText = false;
 		currentAnnotation = null;
+		updateComponentSize();
+		revalidate();
+		repaint();
 	}
 	
 	public void updateComponentSize() {
@@ -304,10 +315,10 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	// MouseListener & MouseMotionListener & MouseWheelListener: Mouse events
 	@Override
 	public void mouseClicked(MouseEvent e) {
+		requestFocusInWindow();
 		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.currentViewingIndex >= 0) {
 			if (e.getClickCount() == 1 && model.flipped && !isLocked) {
 				isEditingText = true;
-				requestFocusInWindow();
 				AnnotatedPhoto.Annotation annotation = new AnnotatedPhoto.Annotation();
 				annotation.color = Color.black; // Will change
 				annotation.position = toImageCoordinates(e.getPoint());
@@ -322,7 +333,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	@Override
 	public void mousePressed(MouseEvent e) {
 		prevMousePos = e.getPoint();
-		if (calculateImageRect().contains(prevMousePos)) {
+		if (calculateImageRect().contains(prevMousePos) && model.flipped) {
 			canStartStroke = true;
 		}
 	}
@@ -333,8 +344,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.flipped) {
-			if (canStartStroke) {
+		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer) {
+			if (canStartStroke && model.flipped) {
 				if (currentStroke == null) {
 					currentStroke = new AnnotatedPhoto.StrokeMark();
 					currentStroke.width = 5; // Will let the user choose in the future
@@ -345,6 +356,11 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				currentStroke.path.add(toImageCoordinates(e.getPoint()));
 				repaint();
 				prevMousePos = e.getPoint();
+			} else {
+				Rectangle visible = getVisibleRect();
+				visible.x -= e.getPoint().x - prevMousePos.x;
+				visible.y -= e.getPoint().y - prevMousePos.y;
+				scrollRectToVisible(visible);
 			}
 		}
 	}
@@ -396,12 +412,20 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				currentAnnotation.text += e.getKeyChar();
 				repaint();
 			}
-			
 		}
 	}
 	@Override
 	public void keyPressed(KeyEvent e) {
-		// Do nothing
+		if (!isEditingText) {
+			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+				model.nextPhoto();
+				reinit();
+			} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+				model.prevPhoto();
+				reinit();
+			}
+		}
+		e.consume();
 	}
 	@Override
 	public void keyReleased(KeyEvent e) {
