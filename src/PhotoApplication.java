@@ -26,6 +26,7 @@ public class PhotoApplication extends JFrame{
     JMenu viewMenu = new JMenu("View");
     JMenuItem importItem = new JMenuItem("Import");
     JMenuItem deleteItem = new JMenuItem("Delete");
+    JMenuItem clearItem = new JMenuItem("Clean");
     JMenuItem quitItem = new JMenuItem("Quit");
     JMenuItem photoItem = new JMenuItem("Photo viewer");
     JMenuItem browserItem = new JMenuItem("Browser");
@@ -64,6 +65,7 @@ public class PhotoApplication extends JFrame{
        
         fileMenu.add(importItem);
         fileMenu.add(deleteItem);
+        fileMenu.add(clearItem);
         fileMenu.add(quitItem);
         
         importItem.addActionListener(
@@ -75,6 +77,15 @@ public class PhotoApplication extends JFrame{
         				showStatusText("Photo removed (The original file is still there).");
         			} else {
         				showStatusText("No photo to remove!");
+        			}
+        		}
+        );
+        clearItem.addActionListener(
+        		event -> {
+        			if (photoView.clearCurrentPhoto()) {
+        				showStatusText("All annotations and strokes removed from the photo.");
+        			} else {
+        				showStatusText("No photo to clean!");
         			}
         		}
         );

@@ -39,9 +39,10 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public int imageScaleMinimumLevel = -20;
 	public int imageScaleMaximumLevel = 20;
 	public double scaleFactorPerLevel = 1.1;
+	public double lineSpacing = 1.2;
 	public int fps = 60;
 	public long flippingAnimationTime = 400;
-	public double lineSpacing = 1.2;
+	public long savePeriod = 5000;
 	public File backgroundImageLocation = FileSystems.getDefault().getPath("data", "resources", "bg.jpg").toFile();
 	public File frameImageLocation = FileSystems.getDefault().getPath("data", "resources", "frame.png").toFile();
 	
@@ -63,10 +64,13 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private int annotationEditingPos = 0;
 	private Point annotationEditingPoint;
 	private boolean canStartStroke = false;
+	private boolean changed = false;
+	private long lastSaveTime = 0;
 	
 
 	public PhotoComponent() {
 		model = new PhotoBrowserModel();
+		model.loadAlbum();
 		try {
 			background = ImageIO.read(backgroundImageLocation);
 			frame = ImageIO.read(frameImageLocation);
@@ -82,17 +86,35 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		timer = new Timer(1000 / fps, this);
 		timer.setInitialDelay(10);
 		timer.start(); 
+		
+		reinit();
+	}
+	
+	public boolean saveAlbum() {
+		changed = false;
+		return model.saveAlbum();
 	}
 	
 	public void addPhotos(File[] url) {
 		model.addPhotos(url);
+		saveAlbum();
 		requestFocusInWindow();
 		reinit();
 	}
 	
 	public boolean deleteCurrentPhoto() {
 		if (model.deletePhoto()) {
+			saveAlbum();
 			reinit();
+			return true;
+		}
+		return false;
+	}
+	
+	public boolean clearCurrentPhoto() {
+		if (model.clearPhoto()) {
+			model.saveAlbum();
+			repaint();
 			return true;
 		}
 		return false;
@@ -402,6 +424,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 					isEditingText = false;
 				}
 				currentStroke.path.add(toImageCoordinates(e.getPoint()));
+				changed = true;
 				repaint();
 				prevMousePos = e.getPoint();
 			} else {
@@ -456,6 +479,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 					model.getAnnotatedPhoto().annotations.remove(currentAnnotation);
 					annotationEditingPoint = currentAnnotation.position;
 				}
+				changed = true;
 				repaint();
 			} else if (c != KeyEvent.CHAR_UNDEFINED) {
 				if (currentAnnotation.text.length() == 0) {
@@ -468,6 +492,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 							currentAnnotation.text.substring(annotationEditingPos, currentAnnotation.text.length());
 				}
 				annotationEditingPos++;
+				changed = true;
 				repaint();
 			}
 		}
@@ -475,6 +500,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	@Override
 	public void keyPressed(KeyEvent e) {
 		if (!isEditingText) {
+			// Jump to another photo in the album
 			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
 				model.nextPhoto();
 				reinit();
@@ -483,6 +509,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				reinit();
 			}
 		} else {
+			// Navigate the pointer in the current editing annotation
 			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
 				annotationEditingPos = Math.min(annotationEditingPos + 1, currentAnnotation.text.length());
 				repaint();
@@ -503,6 +530,17 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	// ActionLister: Animation control, execute in loop.
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		
+		// Periodic save
+		long t = System.currentTimeMillis();
+		if (t - lastSaveTime > savePeriod) {
+			lastSaveTime = t;
+			if (changed) {
+				saveAlbum();
+			}
+		}
+		
+		// Flipping animation
 		if (isFlippingToBack || isFlippingToFront) {
 			if (flippingAnimationProgress < flippingAnimationTime) {
 				flippingAnimationProgress += 1000 / fps;

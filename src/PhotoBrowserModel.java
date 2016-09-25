@@ -40,6 +40,16 @@ public class PhotoBrowserModel {
 		return true;
 	}
 	
+	public boolean clearPhoto() {
+		return clearPhoto(currentViewingIndex);
+	}
+	public boolean clearPhoto(int index) {
+		if (index < 0) return false;
+		album.photoList.get(index).strokes.clear();
+		album.photoList.get(index).annotations.clear();
+		return true;
+	}
+	
 	public int getPhotoCount() {
 		return album.photoList.size();
 	}
@@ -63,13 +73,24 @@ public class PhotoBrowserModel {
 		}
 	}
 	
-	public boolean saveAlbum(File url) {
-		// TODO
-		return false;
+	public boolean saveAlbum() {
+		return SerializationControl.save(album, GlobalSettings.savedAlbumLocation);
 	}
 
-	public boolean loadAlbum(File url) {
-		// TODO
+	public boolean loadAlbum() {
+		if (GlobalSettings.savedAlbumLocation.exists()) {
+			AnnotatedAlbum loadedAlbum = (AnnotatedAlbum)SerializationControl.load(GlobalSettings.savedAlbumLocation);
+			if (loadedAlbum != null) {
+				album = loadedAlbum;
+				if (album.photoList.size() > 0) {
+					currentViewingIndex = 0;
+				}
+				for (AnnotatedPhoto photo : album.photoList) {
+					photo.loadPhoto();
+				}
+				return true;
+			}
+		}
 		return false;
 	}
 }

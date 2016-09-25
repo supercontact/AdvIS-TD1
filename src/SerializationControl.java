@@ -30,15 +30,17 @@ public class SerializationControl {
 		return null;
 	}
 	
-	public static void save(Serializable obj, File file) {
+	public static boolean save(Serializable obj, File file) {
 		try (
 				OutputStream output = new FileOutputStream(file);
 				OutputStream buffer = new BufferedOutputStream(output);
 				ObjectOutput objOutput = new ObjectOutputStream(buffer);
 				){
 			objOutput.writeObject(obj);
+			return true;
 		} catch (IOException e){
 			e.printStackTrace();
+			return false;
 		}
 	}
 
