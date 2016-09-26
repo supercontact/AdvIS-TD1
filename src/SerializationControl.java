@@ -31,6 +31,14 @@ public class SerializationControl {
 	}
 	
 	public static boolean save(Serializable obj, File file) {
+		File directory = file.getParentFile();
+		if (directory != null && !directory.isDirectory()) {
+			if (!directory.mkdirs()) {
+				System.out.println("Cannot create directory: " + directory.getPath());
+				return false;
+			}
+		}
+		
 		try (
 				OutputStream output = new FileOutputStream(file);
 				OutputStream buffer = new BufferedOutputStream(output);
