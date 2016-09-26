@@ -22,7 +22,6 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.Path2D;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -43,12 +42,14 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public int fps = 60;
 	public long flippingAnimationTime = 400;
 	public long savePeriod = 5000;
-	public File backgroundImageLocation = FileSystems.getDefault().getPath("data", "resources", "bg.jpg").toFile();
-	public File frameImageLocation = FileSystems.getDefault().getPath("data", "resources", "frame.png").toFile();
+	public File backgroundImageLocation = GlobalSettings.backgroundImageLocation;
+	public File frameImageLocation = GlobalSettings.frameImageLocation;
+	public File errorImageLocation = GlobalSettings.errorImageLocation;
 	
 	private PhotoBrowserModel model;
 	private Image background;
 	private Image frame;
+	private Image errorImage;
 	private Timer timer;
 	
 	private Point prevMousePos;
@@ -74,6 +75,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		try {
 			background = ImageIO.read(backgroundImageLocation);
 			frame = ImageIO.read(frameImageLocation);
+			errorImage = ImageIO.read(errorImageLocation);
 		} catch (IOException e) {
 			System.out.println("Resources loading error!");
 		}
@@ -127,6 +129,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		model.flipped = false;
 		isEditingText = false;
 		currentAnnotation = null;
+		if (model.getAnnotatedPhoto().image == null) {
+			model.getAnnotatedPhoto().image = errorImage;
+		}
 		updateComponentSize();
 		revalidate();
 		repaint();
@@ -156,6 +161,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.currentViewingIndex >= 0) {
 			if (!model.flipped) {
 				paintPhoto(graphics);
+				if (!model.getAnnotatedPhoto().imageLoaded) {
+					paintPhotoPath(graphics);
+				}
 			} else {
 				paintPhotoBack(graphics);
 				paintStrokes(graphics);
@@ -170,8 +178,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	
 	private void paintBackground(Graphics graphics) {
 		// The background stays fixed when scrolling
-		int w = getParent().getWidth();
-		int h = getParent().getHeight();
+		int w = getParent().getParent().getWidth();
+		int h = getParent().getParent().getHeight();
 		int dx = -getX();
 		int dy = -getY();
 		int imgW = background.getWidth(null);
@@ -324,6 +332,18 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		}
 	}
 	
+	private void paintPhotoPath(Graphics graphics) {
+		Graphics2D g = (Graphics2D)graphics;
+		Rectangle rect = calculateImageRect();
+		
+		Font font = new Font("SansSerif", Font.PLAIN, 15);
+		g.setFont(font);
+		g.setColor(Color.black);
+		g.setClip(calculateImageRect());
+		g.drawString(model.getAnnotatedPhoto().imageURL.toString(), rect.x + 10, rect.y + rect.height - 10);
+		g.setClip(null);
+	}
+	
 	// Find the best prefix of the string that fits in the given space. End with a space if possible.
 	private int trimString(String str, int spaceInPixel, FontMetrics metrics) {
 		int cutIndex = str.indexOf('\n');
@@ -467,7 +487,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	// KeyListener: Keyboard events
 	@Override
 	public void keyTyped(KeyEvent e) {
-		if (isEditingText) {
+		if (isEditingText && !e.isControlDown()) {
 			char c = e.getKeyChar();
 			if ((int)c == KeyEvent.VK_BACK_SPACE) {
 				if (annotationEditingPos > 0) {

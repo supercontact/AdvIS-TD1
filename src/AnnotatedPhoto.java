@@ -1,6 +1,6 @@
 import java.awt.Color;
+import java.awt.Image;
 import java.awt.Point;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -17,7 +17,8 @@ public class AnnotatedPhoto implements Serializable {
 	public ArrayList<Annotation> annotations;
 	public ArrayList<StrokeMark> strokes;
 	
-	transient public BufferedImage image;
+	transient public Image image;
+	transient public boolean imageLoaded = false;
 	
 	public AnnotatedPhoto(File url) {
 		imageURL = url;
@@ -29,6 +30,7 @@ public class AnnotatedPhoto implements Serializable {
 	public boolean loadPhoto() {
 		try {
 			image = ImageIO.read(imageURL);
+			imageLoaded = true;
 			return true;
 		} catch (IOException e) {
 			return false;
