@@ -18,6 +18,10 @@ public class PhotoBrowserModel {
 		album = new AnnotatedAlbum();
 	}
 	
+	public boolean isShowingPhoto() {
+		return currentViewingIndex >= 0;
+	}
+	
 	public void addPhotos(File[] url) {
 		currentViewingIndex = album.photoList.size();
 		flipped = false;

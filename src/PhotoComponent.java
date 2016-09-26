@@ -129,7 +129,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		model.flipped = false;
 		isEditingText = false;
 		currentAnnotation = null;
-		if (model.getAnnotatedPhoto().image == null) {
+		if (model.isShowingPhoto() && model.getAnnotatedPhoto().image == null) {
 			model.getAnnotatedPhoto().image = errorImage;
 		}
 		updateComponentSize();
@@ -139,7 +139,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	
 	public void updateComponentSize() {
 		int w, h;
-		if (model.currentViewingIndex >= 0) {
+		if (model.isShowingPhoto()) {
 			Image img = model.getAnnotatedPhoto().image;
 			int imgW = img.getWidth(null);
 			int imgH = img.getHeight(null);
@@ -158,7 +158,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		super.paintComponent(graphics);
 		
 		paintBackground(graphics);
-		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.currentViewingIndex >= 0) {
+		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.isShowingPhoto()) {
 			if (!model.flipped) {
 				paintPhoto(graphics);
 				if (!model.getAnnotatedPhoto().imageLoaded) {
@@ -374,7 +374,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	
 	private Rectangle calculateImageRect() {
-		if (model.currentViewingIndex < 0) {
+		if (!model.isShowingPhoto()) {
 			return new Rectangle(0, 0, 0, 0);
 		}
 		Image img = model.getAnnotatedPhoto().image;
@@ -400,16 +400,11 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	@Override
 	public void mouseClicked(MouseEvent e) {
 		requestFocusInWindow();
-		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.currentViewingIndex >= 0) {
+		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.isShowingPhoto()) {
 			if (e.getClickCount() == 1 && model.flipped && !isLocked) {
 				Point imagePoint = toImageCoordinates(e.getPoint());
 				isEditingText = true;
-				AnnotatedPhoto.Annotation annotation = new AnnotatedPhoto.Annotation();
-				annotation.color = Color.black; // Will change
-				annotation.position = imagePoint;
-				annotation.size = 20; // Will change
-				annotation.text = "";
-				currentAnnotation = annotation;
+				currentAnnotation = null;
 				annotationEditingPos = 0;
 				annotationEditingPoint = imagePoint;
 				repaint();
@@ -436,11 +431,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			if (canStartStroke && model.flipped) {
 				// Drawing stroke
 				if (currentStroke == null) {
-					currentStroke = new AnnotatedPhoto.StrokeMark();
-					currentStroke.width = 5; // Will let the user choose in the future
-					currentStroke.color = Color.black; // Will let the user choose in the future
+					currentStroke = model.getAnnotatedPhoto().createStroke();
 					currentStroke.path.add(toImageCoordinates(prevMousePos));
-					model.getAnnotatedPhoto().strokes.add(currentStroke);
 					isEditingText = false;
 				}
 				currentStroke.path.add(toImageCoordinates(e.getPoint()));
@@ -496,14 +488,17 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 					annotationEditingPos--;
 				}
 				if (currentAnnotation.text.length() == 0) {
-					model.getAnnotatedPhoto().annotations.remove(currentAnnotation);
+					model.getAnnotatedPhoto().undo();
 					annotationEditingPoint = currentAnnotation.position;
+					currentAnnotation = null;
 				}
 				changed = true;
 				repaint();
 			} else if (c != KeyEvent.CHAR_UNDEFINED) {
-				if (currentAnnotation.text.length() == 0) {
-					model.getAnnotatedPhoto().annotations.add(currentAnnotation);
+				if (currentAnnotation == null) {
+					AnnotatedPhoto.Annotation annotation = model.getAnnotatedPhoto().createAnnotation();
+					annotation.position = annotationEditingPoint;
+					currentAnnotation = annotation;
 				}
 				if (annotationEditingPos == currentAnnotation.text.length()) {
 					currentAnnotation.text += e.getKeyChar();
@@ -537,6 +532,13 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				annotationEditingPos = Math.max(annotationEditingPos - 1, 0);
 				repaint();
 			}
+		}
+		if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_Z) {
+			// Undo
+			isEditingText = false;
+			currentAnnotation = null;
+			model.getAnnotatedPhoto().undo();
+			repaint();
 		}
 		e.consume();
 	}
