@@ -1,10 +1,12 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ItemEvent;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,14 +61,15 @@ public class PhotoApplication extends JFrame{
     ImageIcon toggleRectangleIcon;
     ImageIcon toggleEllipseIcon;
     ButtonGroup toggleDrawingGroup = new ButtonGroup();
-    JButton setColor = new JButton("Set color");
+    JButton setColor = new JButton();
+    BufferedImage originalColorImage;
+    ImageIcon colorIcon;
     JLabel setStrokeWidthLabel = new JLabel();
     JLabel setTextSizeLabel = new JLabel();
     ImageIcon setStrokeWidthIcon;
     ImageIcon setTextSizeIcon;
     JSlider setStrokeWidth = new JSlider();
     JSlider setTextSize = new JSlider();
-    JLabel setFontLabel = new JLabel("Font: ");
     JComboBox<String> setFont = new JComboBox<String>(GlobalSettings.fontStrings);
     JToolBar tool = new JToolBar();
     ArrayList<JToggleButton> categories = new ArrayList<>(); 
@@ -104,6 +107,8 @@ public class PhotoApplication extends JFrame{
 			toggleEllipseIcon = new ImageIcon(ImageIO.read(GlobalSettings.ellipseIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
 			setStrokeWidthIcon = new ImageIcon(ImageIO.read(GlobalSettings.lineWidthIconLocation).getScaledInstance(30, 30, Image.SCALE_SMOOTH));
 			setTextSizeIcon = new ImageIcon(ImageIO.read(GlobalSettings.textSizeIconLocation).getScaledInstance(30, 30, Image.SCALE_SMOOTH));
+			originalColorImage = (BufferedImage)ImageIO.read(GlobalSettings.colorIconLocation);
+			colorIcon = new ImageIcon(ImageIO.read(GlobalSettings.colorIconLocation));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -229,14 +234,13 @@ public class PhotoApplication extends JFrame{
         controlPanelEditMode.add(toggleRectangle);
         controlPanelEditMode.add(toggleEllipse);
         controlPanelEditMode.add(new JLabel("   "));
+        controlPanelEditMode.add(setColor);
+        controlPanelEditMode.add(new JLabel("   "));
         controlPanelEditMode.add(setStrokeWidthLabel);
         controlPanelEditMode.add(setStrokeWidth);
         controlPanelEditMode.add(new JLabel("   "));
         controlPanelEditMode.add(setTextSizeLabel);
         controlPanelEditMode.add(setTextSize);
-        controlPanelEditMode.add(setColor);
-        controlPanelEditMode.add(new JLabel("   "));
-        controlPanelEditMode.add(setFontLabel);
         controlPanelEditMode.add(setFont);
         
         toggleDrawingGroup.add(toggleStroke);
@@ -286,16 +290,34 @@ public class PhotoApplication extends JFrame{
         		event -> photoView.currentTextSize = setTextSize.getValue()
         );
         
+        setColor.setMargin(zeroInsets);
+        setColor.setIcon(colorIcon);
         setColor.addActionListener(
-        		event -> photoView.currentColor = JColorChooser.showDialog(
-        				photoView,
-                        "Choose stroke and text color",
-                        photoView.currentColor)
+        		event -> {
+        			photoView.currentColor = JColorChooser.showDialog(photoView, "Choose stroke and text color", photoView.currentColor);
+        			colorImage(photoView.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
+        		}
         );
+        colorImage(photoView.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
         
         setFont.addActionListener(
         		event -> photoView.currentFontName = (String)setFont.getSelectedItem()
         );
+    }
+    
+    private void colorImage(Color c, BufferedImage oldImg, BufferedImage newImg) {
+    	for (int x = 0; x < newImg.getWidth(); x++) {
+    		for (int y = 0; y < newImg.getHeight(); y++) {
+    			int rgb = oldImg.getRGB(x, y);
+    			int b = Integer.remainderUnsigned(rgb, 0x100) ;
+    			int g = (rgb >>> 8) % 0x100;
+    			int r = (rgb >>> 16) % 0x100;
+    			int a = rgb >>> 24;
+    			int newRgb = (a << 24) + ((r * c.getRed() / 255) << 16) + ((g * c.getGreen() / 255) << 8) + (b * c.getBlue() / 255);
+    			newImg.setRGB(x, y, newRgb);
+    		}
+    	}
+    	System.out.println(Integer.toHexString(oldImg.getRGB(20, 20)) + " " + c + " " + Integer.toHexString(newImg.getRGB(20, 20)));
     }
     
 	public void showStatusText(String text) {

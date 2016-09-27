@@ -55,7 +55,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public int currentStrokeWidth = 5;
 	public int currentTextSize = 15;
 	public AnnotatedPhoto.PrimitiveMark.Type currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.Ellipse;
-	public Color currentColor = Color.black;
+	public Color currentColor = new Color(0x19, 0x2C, 0x3C);
 	public String currentFontName = "Arial";
 	
 	// Links
