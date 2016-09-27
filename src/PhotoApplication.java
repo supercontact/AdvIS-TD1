@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -47,6 +48,8 @@ public class PhotoApplication extends JFrame{
     JSlider setStrokeWidth = new JSlider();
     JLabel setTextSizeLabel = new JLabel("Text size:");
     JSlider setTextSize = new JSlider();
+    JLabel setFontLabel = new JLabel(" Font:");
+    JComboBox<String> setFont = new JComboBox<String>(GlobalSettings.fontStrings);
     JToolBar tool = new JToolBar();
     ArrayList<JToggleButton> categories = new ArrayList<>(); 
 
@@ -61,7 +64,7 @@ public class PhotoApplication extends JFrame{
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
        
         setPreferredSize(new Dimension(1024, 768));
-        setMinimumSize(new Dimension(200, 200));
+        setMinimumSize(new Dimension(300, 400));
         setVisible(true);
        
         setupMenuBar();
@@ -180,6 +183,8 @@ public class PhotoApplication extends JFrame{
         controlPanelEditMode.add(setTextSizeLabel);
         controlPanelEditMode.add(setTextSize);
         controlPanelEditMode.add(setColor);
+        controlPanelEditMode.add(setFontLabel);
+        controlPanelEditMode.add(setFont);
         
         setStrokeWidth.setOpaque(false);
         setStrokeWidth.setMinimum(1);
@@ -202,6 +207,10 @@ public class PhotoApplication extends JFrame{
         				photoView,
                         "Choose stroke and text color",
                         photoView.currentColor)
+        );
+        
+        setFont.addActionListener(
+        		event -> photoView.currentFontName = (String)setFont.getSelectedItem()
         );
        
         showStatusText("Status");

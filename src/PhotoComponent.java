@@ -9,6 +9,7 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -49,6 +50,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public int currentStrokeWidth = 5;
 	public int currentTextSize = 15;
 	public Color currentColor = Color.black;
+	public String currentFontName = "Arial";
 	
 	public File backgroundImageLocation = GlobalSettings.backgroundImageLocation;
 	public File frameImageLocation = GlobalSettings.frameImageLocation;
@@ -264,8 +266,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	
 	private void paintStrokes(Graphics graphics) {
 		Graphics2D g = (Graphics2D)graphics;
-		g.setClip(calculateImageRect());
+		Shape oldClip = g.getClip();
 		Stroke oldStroke = g.getStroke();
+		g.setClip(calculateImageRect().intersection((Rectangle)oldClip));
 	    
 		List<AnnotatedPhoto.StrokeMark> strokes = model.getAnnotatedPhoto().strokes;
 		if (model.flipped) {
@@ -278,7 +281,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 						
 				Path2D line = new Path2D.Double();
 				Point p0 = imageToComponentCoordinates(stroke.path.get(0));
-				Point pe = imageToComponentCoordinates(stroke.path.get(stroke.path.size() - 1));
 				line.moveTo(p0.x, p0.y);
 				for (int i = 1; i < stroke.path.size(); i++) {
 					Point p = imageToComponentCoordinates(stroke.path.get(i));
@@ -289,20 +291,21 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		}
 		
 		g.setStroke(oldStroke);
-		g.setClip(null);
+		g.setClip(oldClip);
 	}
 	
 	private void paintAnnotations(Graphics graphics) {
 		Graphics2D g = (Graphics2D)graphics;
 		Rectangle rect = calculateImageRect();
+		Shape oldClip = g.getClip();
+		g.setClip(rect.intersection((Rectangle)oldClip));
 		
 		List<AnnotatedPhoto.Annotation> annotations = model.getAnnotatedPhoto().annotations;
 		if (model.flipped) {
 			for (AnnotatedPhoto.Annotation annotation : annotations) {
-				Font font = new Font("SansSerif", Font.PLAIN, (int)(annotation.size * imageScaleY));
+				Font font = new Font(annotation.font, Font.PLAIN, (int)(annotation.size * imageScaleY));
 				g.setFont(font);
 				g.setColor(annotation.color);
-				g.setClip(calculateImageRect());
 				FontMetrics metrics = g.getFontMetrics();
 				
 				Point pos = imageToComponentCoordinates(annotation.position);
@@ -336,17 +339,17 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 					str = str.substring(length);
 					pos.y += (int)(annotation.size * imageScaleY * lineSpacing);
 				}
-				
-				g.setClip(null);
 			}
 		}
+		g.setClip(oldClip);
 	}
 	
 	private void paintEditingMark(Graphics graphics) {
 		if (annotationEditingPoint != null) {
 			Graphics2D g = (Graphics2D)graphics;
 			g.setColor(Color.BLACK);
-			g.setClip(calculateImageRect());
+			Shape oldClip = g.getClip();
+			g.setClip(calculateImageRect().intersection((Rectangle)oldClip));
 	
 			Point[] triangle = new Point[] {
 					new Point(annotationEditingPoint.x, annotationEditingPoint.y),
@@ -360,20 +363,22 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				triangleYs[i] = p.y;
 			}
 			g.fillPolygon(triangleXs, triangleYs, 3);
-			g.setClip(null);
+			g.setClip(oldClip);
 		}
 	}
 	
 	private void paintPhotoPath(Graphics graphics) {
 		Graphics2D g = (Graphics2D)graphics;
 		Rectangle rect = calculateImageRect();
+		Shape oldClip = g.getClip();
+		g.setClip(rect.intersection((Rectangle)oldClip));
 		
 		Font font = new Font("SansSerif", Font.PLAIN, 15);
 		g.setFont(font);
 		g.setColor(Color.black);
-		g.setClip(calculateImageRect());
 		g.drawString(model.getAnnotatedPhoto().imageURL.toString(), rect.x + 10, rect.y + rect.height - 10);
-		g.setClip(null);
+		
+		g.setClip(oldClip);
 	}
 	
 	private void updateControlPanel() {
@@ -394,6 +399,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	
 	private void updateControlPanelFade() {
+		if (currentControlPanel == null) return;
 		int height = getParent().getParent().getHeight() - componentToContainerCoordinates(mousePos).y;
 		if (height <= controlPanelOpaqueHeight) {
 			currentControlPanel.setAlpha(controlPanelAlphaMultiplier);
@@ -571,6 +577,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 					AnnotatedPhoto.Annotation annotation = model.getAnnotatedPhoto().createAnnotation();
 					annotation.color = currentColor;
 					annotation.size = currentTextSize;
+					annotation.font = currentFontName;
 					annotation.position = annotationEditingPoint;
 					currentAnnotation = annotation;
 				}

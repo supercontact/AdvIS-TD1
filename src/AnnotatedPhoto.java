@@ -10,7 +10,7 @@ import javax.imageio.ImageIO;
 
 public class AnnotatedPhoto implements Serializable {
 	
-	private static final long serialVersionUID = 2L;
+	private static final long serialVersionUID = 3L;
 
 	public File imageURL;
 	public ArrayList<String> tags;
@@ -93,11 +93,12 @@ public class AnnotatedPhoto implements Serializable {
 	
 	public static class Annotation implements Serializable {
 
-		private static final long serialVersionUID = 2L;
+		private static final long serialVersionUID = 3L;
 		
 		public String text;
 		public Color color;
 		public int size;
+		public String font;
 		public Point position;
 		
 		protected int index;
