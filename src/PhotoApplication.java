@@ -5,13 +5,17 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
 
+import javax.swing.JButton;
+import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -31,8 +35,18 @@ public class PhotoApplication extends JFrame{
     JMenuItem photoItem = new JMenuItem("Photo viewer");
     JMenuItem browserItem = new JMenuItem("Browser");
     JMenuItem splitItem = new JMenuItem("Split mode");
-    JScrollPane body = new JScrollPane();
+    JPanel body = new JPanel();
+    JScrollPane scrollPane = new JScrollPane();
     PhotoComponent photoView = new PhotoComponent();
+    FadePanel controlPanel = new FadePanel();
+    FadePanel controlPanelEditMode = new FadePanel();
+    JButton prev = new JButton("Prev");
+    JButton next = new JButton("Next");
+    JButton setColor = new JButton("Set color");
+    JLabel setStrokeWidthLabel = new JLabel("Stroke width:");
+    JSlider setStrokeWidth = new JSlider();
+    JLabel setTextSizeLabel = new JLabel("Text size:");
+    JSlider setTextSize = new JSlider();
     JToolBar tool = new JToolBar();
     ArrayList<JToggleButton> categories = new ArrayList<>(); 
 
@@ -83,7 +97,7 @@ public class PhotoApplication extends JFrame{
         clearItem.addActionListener(
         		event -> {
         			if (photoView.clearCurrentPhoto()) {
-        				showStatusText("All annotations and strokes removed from the photo.");
+        				showStatusText("All annotations and strokes are removed from the photo.");
         			} else {
         				showStatusText("No photo to clean!");
         			}
@@ -135,11 +149,60 @@ public class PhotoApplication extends JFrame{
     }
     
     private void setupMainArea() {
-    	body.setWheelScrollingEnabled(false);
     	add(body, BorderLayout.CENTER);
         add(status, BorderLayout.SOUTH);
         
-        body.setViewportView(photoView);
+        body.setLayout(new BorderLayout());
+        body.add(scrollPane, BorderLayout.CENTER);
+        
+        scrollPane.setWheelScrollingEnabled(false);
+        scrollPane.setViewportView(photoView);
+        
+        photoView.add(controlPanel);
+        photoView.add(controlPanelEditMode);
+        photoView.controlPanel = controlPanel;
+        photoView.controlPanelEditMode = controlPanelEditMode;
+        
+        controlPanel.setOpaque(false);
+        controlPanel.add(prev);
+        controlPanel.add(next);
+        
+        next.addActionListener(
+        		event -> photoView.nextPhoto()
+        );
+        prev.addActionListener(
+        		event -> photoView.prevPhoto()
+        );
+        
+        controlPanelEditMode.setOpaque(false);
+        controlPanelEditMode.add(setStrokeWidthLabel);
+        controlPanelEditMode.add(setStrokeWidth);
+        controlPanelEditMode.add(setTextSizeLabel);
+        controlPanelEditMode.add(setTextSize);
+        controlPanelEditMode.add(setColor);
+        
+        setStrokeWidth.setOpaque(false);
+        setStrokeWidth.setMinimum(1);
+        setStrokeWidth.setMaximum(30);
+        setStrokeWidth.setValue(5);
+        setStrokeWidth.addChangeListener(
+        		event -> photoView.currentStrokeWidth = setStrokeWidth.getValue()
+        );
+        
+        setTextSize.setOpaque(false);
+        setTextSize.setMinimum(5);
+        setTextSize.setMaximum(100);
+        setTextSize.setValue(15);
+        setTextSize.addChangeListener(
+        		event -> photoView.currentTextSize = setTextSize.getValue()
+        );
+        
+        setColor.addActionListener(
+        		event -> photoView.currentColor = JColorChooser.showDialog(
+        				photoView,
+                        "Choose stroke and text color",
+                        photoView.currentColor)
+        );
        
         showStatusText("Status");
     }
