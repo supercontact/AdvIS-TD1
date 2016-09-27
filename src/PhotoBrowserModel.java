@@ -51,6 +51,7 @@ public class PhotoBrowserModel {
 		if (index < 0) return false;
 		album.photoList.get(index).strokes.clear();
 		album.photoList.get(index).annotations.clear();
+		album.photoList.get(index).primitives.clear();
 		return true;
 	}
 	

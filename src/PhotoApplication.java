@@ -294,8 +294,11 @@ public class PhotoApplication extends JFrame{
         setColor.setIcon(colorIcon);
         setColor.addActionListener(
         		event -> {
-        			photoView.currentColor = JColorChooser.showDialog(photoView, "Choose stroke and text color", photoView.currentColor);
-        			colorImage(photoView.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
+        			Color chosenColor = JColorChooser.showDialog(photoView, "Choose stroke and text color", photoView.currentColor);
+        			if (chosenColor != null) {
+        				photoView.currentColor = chosenColor;
+        				colorImage(photoView.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
+        			}
         		}
         );
         colorImage(photoView.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
@@ -317,7 +320,6 @@ public class PhotoApplication extends JFrame{
     			newImg.setRGB(x, y, newRgb);
     		}
     	}
-    	System.out.println(Integer.toHexString(oldImg.getRGB(20, 20)) + " " + c + " " + Integer.toHexString(newImg.getRGB(20, 20)));
     }
     
 	public void showStatusText(String text) {
