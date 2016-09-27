@@ -1,10 +1,17 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Image;
+import java.awt.Insets;
 import java.awt.event.ItemEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.imageio.ImageIO;
+import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
@@ -41,14 +48,25 @@ public class PhotoApplication extends JFrame{
     PhotoComponent photoView = new PhotoComponent();
     FadePanel controlPanel = new FadePanel();
     FadePanel controlPanelEditMode = new FadePanel();
-    JButton prev = new JButton("Prev");
-    JButton next = new JButton("Next");
+    JButton prev = new JButton();
+    JButton next = new JButton();
+    ImageIcon prevIcon;
+    ImageIcon nextIcon;
+    JToggleButton toggleStroke = new JToggleButton();
+    JToggleButton toggleRectangle = new JToggleButton();
+    JToggleButton toggleEllipse = new JToggleButton();
+    ImageIcon toggleStrokeIcon;
+    ImageIcon toggleRectangleIcon;
+    ImageIcon toggleEllipseIcon;
+    ButtonGroup toggleDrawingGroup = new ButtonGroup();
     JButton setColor = new JButton("Set color");
-    JLabel setStrokeWidthLabel = new JLabel("Stroke width:");
+    JLabel setStrokeWidthLabel = new JLabel();
+    JLabel setTextSizeLabel = new JLabel();
+    ImageIcon setStrokeWidthIcon;
+    ImageIcon setTextSizeIcon;
     JSlider setStrokeWidth = new JSlider();
-    JLabel setTextSizeLabel = new JLabel("Text size:");
     JSlider setTextSize = new JSlider();
-    JLabel setFontLabel = new JLabel(" Font:");
+    JLabel setFontLabel = new JLabel("Font: ");
     JComboBox<String> setFont = new JComboBox<String>(GlobalSettings.fontStrings);
     JToolBar tool = new JToolBar();
     ArrayList<JToggleButton> categories = new ArrayList<>(); 
@@ -66,12 +84,29 @@ public class PhotoApplication extends JFrame{
         setPreferredSize(new Dimension(1024, 768));
         setMinimumSize(new Dimension(300, 400));
         setVisible(true);
+        
+        loadIcons();
        
         setupMenuBar();
         setupToolBar();
         setupMainArea();
+        setupControlPanel();
        
         pack();
+    }
+    
+    public void loadIcons() {
+    	try {
+    		prevIcon = new ImageIcon(ImageIO.read(GlobalSettings.prevIconLocation));
+    		nextIcon = new ImageIcon(ImageIO.read(GlobalSettings.nextIconLocation));
+			toggleStrokeIcon = new ImageIcon(ImageIO.read(GlobalSettings.lineIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
+			toggleRectangleIcon = new ImageIcon(ImageIO.read(GlobalSettings.rectangleIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
+			toggleEllipseIcon = new ImageIcon(ImageIO.read(GlobalSettings.ellipseIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
+			setStrokeWidthIcon = new ImageIcon(ImageIO.read(GlobalSettings.lineWidthIconLocation).getScaledInstance(30, 30, Image.SCALE_SMOOTH));
+			setTextSizeIcon = new ImageIcon(ImageIO.read(GlobalSettings.textSizeIconLocation).getScaledInstance(30, 30, Image.SCALE_SMOOTH));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
     
     private void setupMenuBar() {
@@ -160,8 +195,15 @@ public class PhotoApplication extends JFrame{
         
         scrollPane.setWheelScrollingEnabled(false);
         scrollPane.setViewportView(photoView);
-        
-        photoView.add(controlPanel);
+       
+        showStatusText("Status");
+    }
+    
+    public void setupControlPanel() {
+    	Insets normalInsets = new Insets(0, 10, 0, 10);
+    	Insets zeroInsets = new Insets(0, 0, 0, 0);
+    	
+    	photoView.add(controlPanel);
         photoView.add(controlPanelEditMode);
         photoView.controlPanel = controlPanel;
         photoView.controlPanelEditMode = controlPanelEditMode;
@@ -170,34 +212,76 @@ public class PhotoApplication extends JFrame{
         controlPanel.add(prev);
         controlPanel.add(next);
         
-        next.addActionListener(
-        		event -> photoView.nextPhoto()
-        );
+        prev.setIcon(prevIcon);
+        prev.setMargin(normalInsets);
         prev.addActionListener(
         		event -> photoView.prevPhoto()
         );
+        next.setIcon(nextIcon);
+        next.setMargin(normalInsets);
+        next.addActionListener(
+        		event -> photoView.nextPhoto()
+        );
         
         controlPanelEditMode.setOpaque(false);
+        controlPanelEditMode.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        controlPanelEditMode.add(toggleStroke);
+        controlPanelEditMode.add(toggleRectangle);
+        controlPanelEditMode.add(toggleEllipse);
+        controlPanelEditMode.add(new JLabel("   "));
         controlPanelEditMode.add(setStrokeWidthLabel);
         controlPanelEditMode.add(setStrokeWidth);
+        controlPanelEditMode.add(new JLabel("   "));
         controlPanelEditMode.add(setTextSizeLabel);
         controlPanelEditMode.add(setTextSize);
         controlPanelEditMode.add(setColor);
+        controlPanelEditMode.add(new JLabel("   "));
         controlPanelEditMode.add(setFontLabel);
         controlPanelEditMode.add(setFont);
         
+        toggleDrawingGroup.add(toggleStroke);
+        toggleDrawingGroup.add(toggleRectangle);
+        toggleDrawingGroup.add(toggleEllipse);
+        
+        toggleStroke.setSelected(true);
+        toggleStroke.setMargin(zeroInsets);
+        toggleStroke.setIcon(toggleStrokeIcon);
+        toggleStroke.addActionListener(
+        		event -> photoView.isCreatingPrimitive = false
+        );
+        toggleRectangle.setIcon(toggleRectangleIcon);
+        toggleRectangle.setMargin(zeroInsets);
+        toggleRectangle.addActionListener(
+        		event -> {
+        			photoView.isCreatingPrimitive = true;
+        			photoView.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.Rectangle;
+        		}
+        );
+        toggleEllipse.setIcon(toggleEllipseIcon);
+        toggleEllipse.setMargin(zeroInsets);
+        toggleEllipse.addActionListener(
+        		event -> {
+        			photoView.isCreatingPrimitive = true;
+        			photoView.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.Ellipse;
+        		}
+        );
+        
+        setStrokeWidthLabel.setIcon(setStrokeWidthIcon);
         setStrokeWidth.setOpaque(false);
         setStrokeWidth.setMinimum(1);
         setStrokeWidth.setMaximum(30);
         setStrokeWidth.setValue(5);
+        setStrokeWidth.setPreferredSize(new Dimension(150, 30));
         setStrokeWidth.addChangeListener(
         		event -> photoView.currentStrokeWidth = setStrokeWidth.getValue()
         );
         
+        setTextSizeLabel.setIcon(setTextSizeIcon);
         setTextSize.setOpaque(false);
         setTextSize.setMinimum(5);
         setTextSize.setMaximum(100);
         setTextSize.setValue(15);
+        setTextSize.setPreferredSize(new Dimension(150, 30));
         setTextSize.addChangeListener(
         		event -> photoView.currentTextSize = setTextSize.getValue()
         );
@@ -212,8 +296,6 @@ public class PhotoApplication extends JFrame{
         setFont.addActionListener(
         		event -> photoView.currentFontName = (String)setFont.getSelectedItem()
         );
-       
-        showStatusText("Status");
     }
     
 	public void showStatusText(String text) {

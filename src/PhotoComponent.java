@@ -20,7 +20,9 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -34,37 +36,47 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 
 	private static final long serialVersionUID = 1L;
 	
-	public int frameWidth = 20;
+	// Constants
+	public final int frameWidth = 20;
+	public final int imageScaleMinimumLevel = -20;
+	public final int imageScaleMaximumLevel = 20;
+	public final double scaleFactorPerLevel = 1.1;
+	public final double lineSpacing = 1.2;
+	public final int fps = 60;
+	public final long flippingAnimationTime = 400;
+	public final long savePeriod = 5000;
+	public final int controlPanelOpaqueHeight = 100;
+	public final int controlPanelTransparentHeight = 200;
+	
+	// States and status
 	public double imageScaleX = 1;
 	public double imageScaleY = 1;
-	public int imageScaleMinimumLevel = -20;
-	public int imageScaleMaximumLevel = 20;
-	public double scaleFactorPerLevel = 1.1;
-	public double lineSpacing = 1.2;
-	public int fps = 60;
-	public long flippingAnimationTime = 400;
-	public long savePeriod = 5000;
-	public int controlPanelOpaqueHeight = 100;
-	public int controlPanelTransparentHeight = 200;
-	public float controlPanelAlphaMultiplier = 1;
+	public boolean isCreatingPrimitive = false;
 	public int currentStrokeWidth = 5;
 	public int currentTextSize = 15;
+	public AnnotatedPhoto.PrimitiveMark.Type currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.Ellipse;
 	public Color currentColor = Color.black;
 	public String currentFontName = "Arial";
 	
+	// Links
+	public FadePanel controlPanel;
+	public FadePanel controlPanelEditMode;
+	
+	// Resource locations
 	public File backgroundImageLocation = GlobalSettings.backgroundImageLocation;
 	public File frameImageLocation = GlobalSettings.frameImageLocation;
 	public File errorImageLocation = GlobalSettings.errorImageLocation;
 	
-	public FadePanel controlPanel;
-	public FadePanel controlPanelEditMode;
-	
-	private PhotoBrowserModel model;
+	// Loaded resources
 	private Image background;
 	private Image frame;
 	private Image errorImage;
-	private Timer timer;
 	
+	// Model
+	private PhotoBrowserModel model;
+	
+	// Internal variables
+	private Timer timer;
 	private Point prevMouseDragPos;
 	private Point mousePos;
 	private int scaleLevel = 0;
@@ -75,13 +87,15 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private long flippingAnimationProgress = 0;
 	private double imageScaleXBeforeFlipping = 1;
 	private AnnotatedPhoto.StrokeMark currentStroke;
+	private AnnotatedPhoto.PrimitiveMark currentPrimitive;
 	private AnnotatedPhoto.Annotation currentAnnotation;
 	private int annotationEditingPos = 0;
 	private Point annotationEditingPoint;
-	private boolean canStartStroke = false;
+	private boolean canStartDrawing = false;
 	private boolean changed = false;
 	private long lastSaveTime = 0;
 	private FadePanel currentControlPanel;
+	private float controlPanelAlphaMultiplier = 1;
 	
 
 	public PhotoComponent() {
@@ -194,6 +208,21 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		prevMouseDragPos = pos;
 	}
 	
+	public void drawPrimitiveTo(Point pos) {
+		if (currentPrimitive == null) {
+			currentPrimitive = model.getAnnotatedPhoto().createPrimitive();
+			currentPrimitive.type = currentPrimitiveType;
+			currentPrimitive.color = currentColor;
+			currentPrimitive.lineWidth = currentStrokeWidth;
+			currentPrimitive.p1 = componentToImageCoordinates(prevMouseDragPos);
+			isEditingText = false;
+		}
+		currentPrimitive.p2 = componentToImageCoordinates(pos);
+		changed = true;
+		repaint();
+		prevMouseDragPos = pos;
+	}
+	
 	public void insertCharacter(char c) {
 		if (currentAnnotation == null) {
 			AnnotatedPhoto.Annotation annotation = model.getAnnotatedPhoto().createAnnotation();
@@ -267,6 +296,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		
 		paintBackground(graphics);
 		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.isShowingPhoto()) {
+			Shape oldClip = g.getClip();
+			g.setClip(calculateImageRect().intersection((Rectangle)oldClip));
+			
 			if (!model.flipped) {
 				paintPhoto(graphics);
 				if (!model.getAnnotatedPhoto().imageLoaded) {
@@ -275,11 +307,14 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			} else {
 				paintPhotoBack(graphics);
 				paintStrokes(graphics);
+				paintPrimitives(graphics);
 				paintAnnotations(graphics);
 				if (isEditingText) {
 					paintEditingMark(graphics);
 				}
 			}
+			
+			g.setClip(oldClip);
 			paintPhotoFrame(graphics);
 		}
 		
@@ -345,9 +380,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	
 	private void paintStrokes(Graphics graphics) {
 		Graphics2D g = (Graphics2D)graphics;
-		Shape oldClip = g.getClip();
 		Stroke oldStroke = g.getStroke();
-		g.setClip(calculateImageRect().intersection((Rectangle)oldClip));
 	    
 		List<AnnotatedPhoto.StrokeMark> strokes = model.getAnnotatedPhoto().strokes;
 		if (model.flipped) {
@@ -370,14 +403,44 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		}
 		
 		g.setStroke(oldStroke);
-		g.setClip(oldClip);
+	}
+	
+	private void paintPrimitives(Graphics graphics) {
+		Graphics2D g = (Graphics2D)graphics;
+		Stroke oldStroke = g.getStroke();
+	    
+		List<AnnotatedPhoto.PrimitiveMark> primitives = model.getAnnotatedPhoto().primitives;
+		if (model.flipped) {
+			for (AnnotatedPhoto.PrimitiveMark primitive : primitives) {
+				float realWidth = (float)(primitive.lineWidth * imageScaleY);
+				
+				Stroke strokeType = new BasicStroke(realWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER);
+				g.setStroke(strokeType);
+				g.setColor(primitive.color);
+				
+				Point p1c = imageToComponentCoordinates(primitive.p1);
+				Point p2c = imageToComponentCoordinates(primitive.p2);
+				int x = Math.min(p1c.x, p2c.x);
+				int y = Math.min(p1c.y, p2c.y);
+				int w = Math.abs(p1c.x - p2c.x);
+				int h = Math.abs(p1c.y - p2c.y);
+				
+				Shape shape = null;
+				if (primitive.type == AnnotatedPhoto.PrimitiveMark.Type.Rectangle) {
+					shape = new Rectangle2D.Float(x, y, w, h);
+				} else if (primitive.type == AnnotatedPhoto.PrimitiveMark.Type.Ellipse) {
+					shape = new Ellipse2D.Float(x, y, w, h);
+				}
+				g.draw(shape);
+			}
+		}
+		
+		g.setStroke(oldStroke);
 	}
 	
 	private void paintAnnotations(Graphics graphics) {
 		Graphics2D g = (Graphics2D)graphics;
 		Rectangle rect = calculateImageRect();
-		Shape oldClip = g.getClip();
-		g.setClip(rect.intersection((Rectangle)oldClip));
 		
 		List<AnnotatedPhoto.Annotation> annotations = model.getAnnotatedPhoto().annotations;
 		if (model.flipped) {
@@ -420,15 +483,12 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				}
 			}
 		}
-		g.setClip(oldClip);
 	}
 	
 	private void paintEditingMark(Graphics graphics) {
 		if (annotationEditingPoint != null) {
 			Graphics2D g = (Graphics2D)graphics;
 			g.setColor(Color.BLACK);
-			Shape oldClip = g.getClip();
-			g.setClip(calculateImageRect().intersection((Rectangle)oldClip));
 	
 			int size = currentAnnotation == null ? currentTextSize : currentAnnotation.size;
 			Point[] triangle = new Point[] {
@@ -443,22 +503,17 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				triangleYs[i] = p.y;
 			}
 			g.fillPolygon(triangleXs, triangleYs, 3);
-			g.setClip(oldClip);
 		}
 	}
 	
 	private void paintPhotoPath(Graphics graphics) {
 		Graphics2D g = (Graphics2D)graphics;
 		Rectangle rect = calculateImageRect();
-		Shape oldClip = g.getClip();
-		g.setClip(rect.intersection((Rectangle)oldClip));
 		
 		Font font = new Font("SansSerif", Font.PLAIN, 15);
 		g.setFont(font);
 		g.setColor(Color.black);
 		g.drawString(model.getAnnotatedPhoto().imageURL.toString(), rect.x + 10, rect.y + rect.height - 10);
-		
-		g.setClip(oldClip);
 	}
 	
 	
@@ -579,22 +634,33 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public void mousePressed(MouseEvent e) {
 		prevMouseDragPos = e.getPoint();
 		if (calculateImageRect().contains(prevMouseDragPos) && model.flipped && !isLocked) {
-			canStartStroke = true;
+			canStartDrawing = true;
 		}
+		controlPanelAlphaMultiplier = 0.2f;
+		updateControlPanelFade();
 	}
 	@Override
 	public void mouseReleased(MouseEvent e) {
 		currentStroke = null;
-		canStartStroke = false;
+		currentPrimitive = null;
+		canStartDrawing = false;
+		controlPanelAlphaMultiplier = 1;
+		updateControlPanelFade();
 	}
 	@Override
 	public void mouseDragged(MouseEvent e) {
 		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && !isLocked) {
-			if (canStartStroke && model.flipped && SwingUtilities.isLeftMouseButton(e)) {
-				drawStrokeTo(e.getPoint());
+			if (canStartDrawing && model.flipped && SwingUtilities.isLeftMouseButton(e)) {
+				if (isCreatingPrimitive) {
+					drawPrimitiveTo(e.getPoint());
+				} else {
+					drawStrokeTo(e.getPoint());
+				}
 			} else {
 				scrollPhoto(e.getPoint().x - prevMouseDragPos.x, e.getPoint().y - prevMouseDragPos.y);
 			}
+			mousePos = e.getPoint();
+			updateControlPanelFade();
 		}
 	}
 	@Override

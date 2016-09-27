@@ -10,12 +10,13 @@ import javax.imageio.ImageIO;
 
 public class AnnotatedPhoto implements Serializable {
 	
-	private static final long serialVersionUID = 3L;
+	private static final long serialVersionUID = 4L;
 
 	public File imageURL;
 	public ArrayList<String> tags;
 	public ArrayList<Annotation> annotations;
 	public ArrayList<StrokeMark> strokes;
+	public ArrayList<PrimitiveMark> primitives;
 	
 	private int addonCount = 0;
 	
@@ -27,6 +28,7 @@ public class AnnotatedPhoto implements Serializable {
 		tags = new ArrayList<>();
 		annotations = new ArrayList<>();
 		strokes = new ArrayList<>();
+		primitives = new ArrayList<>();
 	}
 	
 	public boolean loadPhoto() {
@@ -63,18 +65,47 @@ public class AnnotatedPhoto implements Serializable {
 		return stroke;
 	}
 	
+	public PrimitiveMark createPrimitive() {
+		PrimitiveMark primitive = new PrimitiveMark();
+		primitive.type = PrimitiveMark.Type.Ellipse;
+		primitive.color = Color.black;
+		primitive.lineWidth = 5;
+		// Default value
+		
+		primitive.index = addonCount++;
+		primitives.add(primitive);
+		return primitive;
+	}
+	
 	public void undo() {
 		if (annotations.size() > 0 && 
-				(strokes.size() == 0 || annotations.get(annotations.size() - 1).index > strokes.get(strokes.size() - 1).index)) {
+				(strokes.size() == 0 || annotations.get(annotations.size() - 1).index > strokes.get(strokes.size() - 1).index) && 
+				(primitives.size() == 0 || annotations.get(annotations.size() - 1).index > primitives.get(primitives.size() - 1).index)) {
 			annotations.remove(annotations.size() - 1);
 			addonCount--;
 		} else if (strokes.size() > 0 && 
-				(annotations.size() == 0 || strokes.get(strokes.size() - 1).index > annotations.get(annotations.size() - 1).index)) {
+				(primitives.size() == 0 || strokes.get(strokes.size() - 1).index > primitives.get(primitives.size() - 1).index)) {
 			strokes.remove(strokes.size() - 1);
+			addonCount--;
+		} else if (primitives.size() > 0) {
+			primitives.remove(primitives.size() - 1);
 			addonCount--;
 		}
 	}
 	
+	
+	public static class Annotation implements Serializable {
+
+		private static final long serialVersionUID = 3L;
+		
+		public String text;
+		public Color color;
+		public int size;
+		public String font;
+		public Point position;
+		
+		protected int index;
+	}
 	
 	public static class StrokeMark implements Serializable {
 		
@@ -91,15 +122,20 @@ public class AnnotatedPhoto implements Serializable {
 		}
 	}
 	
-	public static class Annotation implements Serializable {
-
-		private static final long serialVersionUID = 3L;
+	public static class PrimitiveMark implements Serializable {
 		
-		public String text;
+		private static final long serialVersionUID = 1L;
+		
+		public enum Type {
+			Rectangle,
+			Ellipse,
+			ImageWindow
+		}
+		
+		public Type type;
+		public Point p1, p2;
 		public Color color;
-		public int size;
-		public String font;
-		public Point position;
+		public double lineWidth;
 		
 		protected int index;
 	}
