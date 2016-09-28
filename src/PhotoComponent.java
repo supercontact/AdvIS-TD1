@@ -106,7 +106,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			frame = ImageIO.read(frameImageLocation);
 			errorImage = ImageIO.read(errorImageLocation);
 		} catch (IOException e) {
-			System.out.println("Resources loading error!");
+			e.printStackTrace();
+			PhotoApplication.showStatusText("Resources loading error!");
 		}
 		
 		addMouseListener(this);
@@ -151,14 +152,24 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		return false;
 	}
 	
+	public int getPhotoIndex() {
+		return model.currentViewingIndex;
+	}
+	
+	public int getPhotoCount() {
+		return model.getPhotoCount();
+	}
+	
 	public void nextPhoto() {
 		model.nextPhoto();
 		reinit();
+		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
 	}
 	
 	public void prevPhoto() {
 		model.prevPhoto();
 		reinit();
+		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
 	}
 	
 	public void flipPhoto() {
@@ -266,6 +277,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		model.getAnnotatedPhoto().undo();
 		changed = true;
 		repaint();
+		PhotoApplication.showStatusText("Undo last operation.");
 	}
 	
 	public void reinit() {

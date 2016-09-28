@@ -30,9 +30,11 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-public class PhotoApplication extends JFrame{
+public class PhotoApplication extends JFrame {
 
     private static final long serialVersionUID = 1L;
+    
+    public static PhotoApplication app;
     
     JLabel status = new JLabel();
     JMenuBar menuBar = new JMenuBar();;
@@ -76,11 +78,13 @@ public class PhotoApplication extends JFrame{
 
     public static void main(String[] args) {
     	SavedSettings.loadSettings();
-        new PhotoApplication();
+    	new PhotoApplication();
     }
    
     public PhotoApplication() {
-        super("Assignment #1");
+        super("PhotoX");
+        
+        app = this;
         
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
        
@@ -98,7 +102,7 @@ public class PhotoApplication extends JFrame{
         pack();
     }
     
-    public void loadIcons() {
+    private void loadIcons() {
     	try {
     		prevIcon = new ImageIcon(ImageIO.read(GlobalSettings.prevIconLocation));
     		nextIcon = new ImageIcon(ImageIO.read(GlobalSettings.nextIconLocation));
@@ -110,6 +114,7 @@ public class PhotoApplication extends JFrame{
 			originalColorImage = (BufferedImage)ImageIO.read(GlobalSettings.colorIconLocation);
 			colorIcon = new ImageIcon(ImageIO.read(GlobalSettings.colorIconLocation));
 		} catch (IOException e) {
+			showStatusText("Resources loading error!");
 			e.printStackTrace();
 		}
     }
@@ -204,7 +209,7 @@ public class PhotoApplication extends JFrame{
         showStatusText("Status");
     }
     
-    public void setupControlPanel() {
+    private void setupControlPanel() {
     	Insets normalInsets = new Insets(0, 10, 0, 10);
     	Insets zeroInsets = new Insets(0, 0, 0, 0);
     	
@@ -241,6 +246,7 @@ public class PhotoApplication extends JFrame{
         controlPanelEditMode.add(new JLabel("   "));
         controlPanelEditMode.add(setTextSizeLabel);
         controlPanelEditMode.add(setTextSize);
+        controlPanelEditMode.add(new JLabel("   "));
         controlPanelEditMode.add(setFont);
         
         toggleDrawingGroup.add(toggleStroke);
@@ -321,10 +327,6 @@ public class PhotoApplication extends JFrame{
     		}
     	}
     }
-    
-	public void showStatusText(String text) {
-		status.setText(text);
-	}
 	
 	public void importImages() {
 		JFileChooser fileChooser = new JFileChooser();
@@ -347,6 +349,10 @@ public class PhotoApplication extends JFrame{
 		SavedSettings.settings.defaultFileLocation = files[0].getParentFile();
 		SavedSettings.saveSettings();
 		showStatusText(files.length + " photo(s) are selected. Showing the first photo.");
+	}
+	
+	public static void showStatusText(String text) {
+		app.status.setText(text);
 	}
 
 }
