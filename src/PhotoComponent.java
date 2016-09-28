@@ -185,16 +185,27 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		}
 	}
 	
-	public void scalePhoto(int delta) {
+	public void scalePhoto(int delta, Point pivot) {
+		Rectangle rect = calculateImageRect();
+		Point pos = new Point(
+				pivot.x - rect.x + (int)(frameWidth * imageScaleX),
+				pivot.y - rect.y + (int)(frameWidth * imageScaleY));
+		
 		scaleLevel -= delta;
 		scaleLevel = Math.max(scaleLevel, imageScaleMinimumLevel);
 		scaleLevel = Math.min(scaleLevel, imageScaleMaximumLevel);
 		
+		double oldScale = imageScaleY;
+		
 		imageScaleX = Math.pow(scaleFactorPerLevel, scaleLevel);
 		imageScaleY = Math.pow(scaleFactorPerLevel, scaleLevel);
-		
 		updateComponentSize();
 		revalidate();
+		
+		// Scroll photo such that the pixel pointed by the cursor stays fixed after scaling.
+		double factor = imageScaleX / oldScale - 1;
+		scrollPhoto((int)(- factor * pos.x), (int)(- factor * pos.y));
+		
 		repaint();
 	}
 	
@@ -677,7 +688,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		scalePhoto(e.getWheelRotation());
+		scalePhoto(e.getWheelRotation(), e.getPoint());
 	}
 	@Override
 	public void mouseMoved(MouseEvent e) {
