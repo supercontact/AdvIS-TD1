@@ -57,9 +57,11 @@ public class PhotoApplication extends JFrame {
     ImageIcon prevIcon;
     ImageIcon nextIcon;
     JToggleButton toggleStroke = new JToggleButton();
+    JToggleButton toggleStraightLine = new JToggleButton();
     JToggleButton toggleRectangle = new JToggleButton();
     JToggleButton toggleEllipse = new JToggleButton();
     ImageIcon toggleStrokeIcon;
+    ImageIcon toggleStraightLineIcon;
     ImageIcon toggleRectangleIcon;
     ImageIcon toggleEllipseIcon;
     ButtonGroup toggleDrawingGroup = new ButtonGroup();
@@ -106,8 +108,9 @@ public class PhotoApplication extends JFrame {
     	try {
     		prevIcon = new ImageIcon(ImageIO.read(GlobalSettings.prevIconLocation));
     		nextIcon = new ImageIcon(ImageIO.read(GlobalSettings.nextIconLocation));
-			toggleStrokeIcon = new ImageIcon(ImageIO.read(GlobalSettings.lineIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
-			toggleRectangleIcon = new ImageIcon(ImageIO.read(GlobalSettings.rectangleIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
+    		toggleStrokeIcon = new ImageIcon(ImageIO.read(GlobalSettings.lineIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
+    		toggleStraightLineIcon = new ImageIcon(ImageIO.read(GlobalSettings.straightLineIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
+    		toggleRectangleIcon = new ImageIcon(ImageIO.read(GlobalSettings.rectangleIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
 			toggleEllipseIcon = new ImageIcon(ImageIO.read(GlobalSettings.ellipseIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
 			setStrokeWidthIcon = new ImageIcon(ImageIO.read(GlobalSettings.lineWidthIconLocation).getScaledInstance(30, 30, Image.SCALE_SMOOTH));
 			setTextSizeIcon = new ImageIcon(ImageIO.read(GlobalSettings.textSizeIconLocation).getScaledInstance(30, 30, Image.SCALE_SMOOTH));
@@ -236,9 +239,10 @@ public class PhotoApplication extends JFrame {
         controlPanelEditMode.setOpaque(false);
         controlPanelEditMode.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
         controlPanelEditMode.add(toggleStroke);
+        controlPanelEditMode.add(toggleStraightLine);
         controlPanelEditMode.add(toggleRectangle);
         controlPanelEditMode.add(toggleEllipse);
-        controlPanelEditMode.add(new JLabel("   "));
+        controlPanelEditMode.add(new JLabel("    "));
         controlPanelEditMode.add(setColor);
         controlPanelEditMode.add(new JLabel("   "));
         controlPanelEditMode.add(setStrokeWidthLabel);
@@ -250,6 +254,7 @@ public class PhotoApplication extends JFrame {
         controlPanelEditMode.add(setFont);
         
         toggleDrawingGroup.add(toggleStroke);
+        toggleDrawingGroup.add(toggleStraightLine);
         toggleDrawingGroup.add(toggleRectangle);
         toggleDrawingGroup.add(toggleEllipse);
         
@@ -258,6 +263,14 @@ public class PhotoApplication extends JFrame {
         toggleStroke.setIcon(toggleStrokeIcon);
         toggleStroke.addActionListener(
         		event -> photoView.isCreatingPrimitive = false
+        );
+        toggleStraightLine.setIcon(toggleStraightLineIcon);
+        toggleStraightLine.setMargin(zeroInsets);
+        toggleStraightLine.addActionListener(
+        		event -> {
+        			photoView.isCreatingPrimitive = true;
+        			photoView.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.StraightLine;
+        		}
         );
         toggleRectangle.setIcon(toggleRectangleIcon);
         toggleRectangle.setMargin(zeroInsets);

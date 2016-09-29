@@ -11,6 +11,7 @@ public class GlobalSettings {
 	public final static File prevIconLocation = FileSystems.getDefault().getPath("data", "resources", "prev.png").toFile();
 	public final static File nextIconLocation = FileSystems.getDefault().getPath("data", "resources", "next.png").toFile();
 	public final static File lineIconLocation = FileSystems.getDefault().getPath("data", "resources", "line.png").toFile();
+	public final static File straightLineIconLocation = FileSystems.getDefault().getPath("data", "resources", "straightLine.png").toFile();
 	public final static File rectangleIconLocation = FileSystems.getDefault().getPath("data", "resources", "rectangle.png").toFile();
 	public final static File ellipseIconLocation = FileSystems.getDefault().getPath("data", "resources", "ellipse.png").toFile();
 	public final static File lineWidthIconLocation = FileSystems.getDefault().getPath("data", "resources", "lineWidth.png").toFile();

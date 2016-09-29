@@ -21,6 +21,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
@@ -449,7 +450,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				int h = Math.abs(p1c.y - p2c.y);
 				
 				Shape shape = null;
-				if (primitive.type == AnnotatedPhoto.PrimitiveMark.Type.Rectangle) {
+				if (primitive.type == AnnotatedPhoto.PrimitiveMark.Type.StraightLine) {
+					shape = new Line2D.Float(p1c.x, p1c.y, p2c.x, p2c.y);
+				} else if (primitive.type == AnnotatedPhoto.PrimitiveMark.Type.Rectangle) {
 					shape = new Rectangle2D.Float(x, y, w, h);
 				} else if (primitive.type == AnnotatedPhoto.PrimitiveMark.Type.Ellipse) {
 					shape = new Ellipse2D.Float(x, y, w, h);

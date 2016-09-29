@@ -127,6 +127,7 @@ public class AnnotatedPhoto implements Serializable {
 		private static final long serialVersionUID = 1L;
 		
 		public enum Type {
+			StraightLine,
 			Rectangle,
 			Ellipse,
 			ImageWindow
