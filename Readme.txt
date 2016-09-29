@@ -7,15 +7,16 @@ Navigate by left/right keys or the two buttons (which appears when moving the cu
 Enable scrolling if image is too big.
 Show a background image that stays fixed when scrolling.
 Drag (left/right mouse key in view mode, right mouse key in flipped mode) to scroll.
-Mouse wheel to scale photo.
+Mouse wheel to scale photo. The position where the mouse is pointing will stay fixed.
 Resizing will be handled correctly.
 Double click to flip photo (+animation).
 
 In flipped state:
 A control bar is at the bottom, which will appear when moving the mouse to the bottom.
 Drag to draw strokes.
-Drag to draw rectangle (if rectangle tool is selected).
-Drag to draw ellipse (if ellipse tool is selected).
+Drag to draw a straight line (if straight line tool is selected).
+Drag to draw a rectangle (if rectangle tool is selected).
+Drag to draw an ellipse (if ellipse tool is selected).
 The control bar becomes more transparent when drawing.
 Click one time, and type to add annotation.
 Automatic line break when reaching the right end.
