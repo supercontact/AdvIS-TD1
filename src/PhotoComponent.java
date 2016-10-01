@@ -30,6 +30,7 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
+import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
@@ -37,11 +38,18 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 
 	private static final long serialVersionUID = 1L;
 	
+	public enum ScaleMode {
+		OriginalSize,
+		FitWindow,
+		FitWidth,
+		FitHeight
+	}
+	
 	// Constants
 	public final int frameWidth = 20;
-	public final int imageScaleMinimumLevel = -20;
-	public final int imageScaleMaximumLevel = 20;
-	public final double scaleFactorPerLevel = 1.1;
+	public final double imageScaleMinimum = 0.05;
+	public final double imageScaleMaximum = 20;
+	public final double scaleFactor = 1.1;
 	public final double lineSpacing = 1.2;
 	public final int fps = 60;
 	public final long flippingAnimationTime = 400;
@@ -50,6 +58,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public final int controlPanelTransparentHeight = 200;
 	
 	// States and status
+	public ScaleMode defaultScaleMode = ScaleMode.OriginalSize;
+	public boolean scaleSmallPhoto = false;
 	public double imageScaleX = 1;
 	public double imageScaleY = 1;
 	public boolean isCreatingPrimitive = false;
@@ -77,6 +87,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private PhotoBrowserModel model;
 	
 	// Internal variables
+	private boolean initiated = false;
 	private Timer timer;
 	private Point prevMouseDragPos;
 	private Point mousePos;
@@ -110,7 +121,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			e.printStackTrace();
 			PhotoApplication.showStatusText("Resources loading error!");
 		}
-		
+	}
+	
+	public void init() {
 		addMouseListener(this);
 		addMouseMotionListener(this);
 		addMouseWheelListener(this);
@@ -120,7 +133,19 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		timer.setInitialDelay(10);
 		timer.start(); 
 		
-		reinit();
+		reset();
+		initiated = true;
+	}
+	
+	public void reset() {
+		scaleLevel = 0;
+		model.flipped = false;
+		isEditingText = false;
+		currentAnnotation = null;
+		if (model.isShowingPhoto() && model.getAnnotatedPhoto().image == null) {
+			model.getAnnotatedPhoto().image = errorImage;
+		}
+		fitPhoto();
 	}
 	
 	public boolean saveAlbum() {
@@ -132,13 +157,13 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		model.addPhotos(url);
 		saveAlbum();
 		requestFocusInWindow();
-		reinit();
+		reset();
 	}
 	
 	public boolean deleteCurrentPhoto() {
 		if (model.deletePhoto()) {
 			saveAlbum();
-			reinit();
+			reset();
 			return true;
 		}
 		return false;
@@ -163,13 +188,13 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	
 	public void nextPhoto() {
 		model.nextPhoto();
-		reinit();
+		reset();
 		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
 	}
 	
 	public void prevPhoto() {
 		model.prevPhoto();
-		reinit();
+		reset();
 		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
 	}
 	
@@ -187,19 +212,15 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	
 	public void scalePhoto(int delta, Point pivot) {
-		Rectangle rect = calculateImageRect();
-		Point pos = new Point(
-				pivot.x - rect.x + (int)(frameWidth * imageScaleX),
-				pivot.y - rect.y + (int)(frameWidth * imageScaleY));
-		
-		scaleLevel -= delta;
-		scaleLevel = Math.max(scaleLevel, imageScaleMinimumLevel);
-		scaleLevel = Math.min(scaleLevel, imageScaleMaximumLevel);
+		Rectangle rect = calculateImageRectWithFrame();
+		Point pos = new Point(pivot.x - rect.x, pivot.y - rect.y);
 		
 		double oldScale = imageScaleY;
 		
-		imageScaleX = Math.pow(scaleFactorPerLevel, scaleLevel);
-		imageScaleY = Math.pow(scaleFactorPerLevel, scaleLevel);
+		if ((delta > 0 && imageScaleY > imageScaleMinimum) || (delta < 0 && imageScaleY < imageScaleMaximum)) {
+			imageScaleY *= Math.pow(scaleFactor, -delta);
+			imageScaleX *= Math.pow(scaleFactor, -delta);
+		}
 		updateComponentSize();
 		revalidate();
 		
@@ -207,6 +228,44 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		double factor = imageScaleX / oldScale - 1;
 		scrollPhoto((int)(- factor * pos.x), (int)(- factor * pos.y));
 		
+		repaint();
+	}
+	
+	public void fitPhoto() {
+		if (!model.isShowingPhoto()) return;
+		Image img = model.getAnnotatedPhoto().image;
+		JScrollPane scrollPane = (JScrollPane)getParent().getParent();
+		int requiredWidth = img.getWidth(null) + 2 * frameWidth;
+		int requiredHeight = img.getHeight(null) + 2 * frameWidth;
+		int epsilon = 10;
+		int containerWidth = scrollPane.getWidth() - epsilon;
+		int containerHeight = scrollPane.getHeight() - epsilon;
+		int scrollbarWidth = scrollPane.getVerticalScrollBar().getPreferredSize().width;
+		
+		imageScaleX = 1;
+		
+		if (defaultScaleMode == ScaleMode.FitWidth && (scaleSmallPhoto || requiredWidth > containerWidth)) {
+			int realContainerWidth = containerWidth;
+			if (requiredHeight * containerWidth > requiredWidth * containerHeight) {
+				realContainerWidth -= scrollbarWidth;
+			}
+			imageScaleX = realContainerWidth / (double) requiredWidth;
+		} else if (defaultScaleMode == ScaleMode.FitHeight && (scaleSmallPhoto || requiredHeight > containerHeight)) {
+			int realContainerHeight = containerHeight;
+			if (requiredWidth * containerHeight > requiredHeight * containerWidth) {
+				realContainerHeight -= scrollbarWidth;
+			}
+			imageScaleX = realContainerHeight / (double) requiredHeight;
+		} else if (defaultScaleMode == ScaleMode.FitWindow) {
+			double scale = Math.min(containerWidth / (double) requiredWidth, containerHeight / (double) requiredHeight);
+			if (scaleSmallPhoto || scale < 1) {
+				imageScaleX = scale;
+			}
+		}
+		imageScaleY = imageScaleX;
+		updateComponentSize();
+		
+		revalidate();
 		repaint();
 	}
 	
@@ -292,22 +351,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		PhotoApplication.showStatusText("Undo last operation.");
 	}
 	
-	public void reinit() {
-		imageScaleX = 1;
-		imageScaleY = 1;
-		scaleLevel = 0;
-		model.flipped = false;
-		isEditingText = false;
-		currentAnnotation = null;
-		if (model.isShowingPhoto() && model.getAnnotatedPhoto().image == null) {
-			model.getAnnotatedPhoto().image = errorImage;
-		}
-		updateComponentSize();
-		revalidate();
-		repaint();
-	}
-
-	
 	
 	// All the painting methods
 	@Override
@@ -319,6 +362,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		
 		paintBackground(graphics);
+		if (!initiated) return;
 		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.isShowingPhoto()) {
 			Shape oldClip = g.getClip();
 			g.setClip(calculateImageRect().intersection((Rectangle)oldClip));
@@ -620,6 +664,15 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		int imgW = (int)(img.getWidth(null) * imageScaleX);
 		int imgH = (int)(img.getHeight(null) * imageScaleY);
 		return new Rectangle(midx - imgW / 2, midy - imgH / 2, imgW, imgH);
+	}
+	
+	private Rectangle calculateImageRectWithFrame() {
+		Rectangle rect = calculateImageRect();
+		rect.x -= frameWidth * imageScaleX;
+		rect.y -= frameWidth * imageScaleY;
+		rect.width += 2 * frameWidth * imageScaleX;
+		rect.height += 2 * frameWidth * imageScaleY;
+		return rect;
 	}
 	
 	private Point componentToImageCoordinates(Point p) {

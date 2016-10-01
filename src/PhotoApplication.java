@@ -15,6 +15,7 @@ import javax.imageio.ImageIO;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -25,6 +26,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
@@ -47,6 +49,11 @@ public class PhotoApplication extends JFrame {
     JMenuItem photoItem = new JMenuItem("Photo viewer");
     JMenuItem browserItem = new JMenuItem("Browser");
     JMenuItem splitItem = new JMenuItem("Split mode");
+    JCheckBoxMenuItem scaleSmallImageItem = new JCheckBoxMenuItem("Scale small photos");
+    JMenuItem originalSizeItem = new JMenuItem("Original size (100%)");
+    JMenuItem fitWindowItem = new JMenuItem("Fit to window");
+    JMenuItem fitWidthItem = new JMenuItem("Fit to width");
+    JMenuItem fitHeightItem = new JMenuItem("Fit to height");
     JPanel body = new JPanel();
     JScrollPane scrollPane = new JScrollPane();
     PhotoComponent photoView = new PhotoComponent();
@@ -100,6 +107,8 @@ public class PhotoApplication extends JFrame {
         setupToolBar();
         setupMainArea();
         setupControlPanel();
+        
+        photoView.init();
        
         pack();
     }
@@ -162,6 +171,13 @@ public class PhotoApplication extends JFrame {
         viewMenu.add(photoItem);
         viewMenu.add(browserItem);
         viewMenu.add(splitItem);
+        viewMenu.add(new JSeparator());
+        viewMenu.add(scaleSmallImageItem);
+        viewMenu.add(new JSeparator());
+        viewMenu.add(originalSizeItem);
+        viewMenu.add(fitWindowItem);
+        viewMenu.add(fitWidthItem);
+        viewMenu.add(fitHeightItem);
         
         photoItem.addActionListener(
         		event -> showStatusText("Switched to photo viewer mode.")
@@ -172,6 +188,38 @@ public class PhotoApplication extends JFrame {
         splitItem.addActionListener(
         		event -> showStatusText("Switched to split mode (Not yet supported).")
         );
+        scaleSmallImageItem.addActionListener(
+        		event -> {
+        			photoView.scaleSmallPhoto = scaleSmallImageItem.isSelected();
+        			photoView.fitPhoto();
+        		}
+        		
+        );
+        originalSizeItem.addActionListener(
+        		event -> {
+        			photoView.defaultScaleMode = PhotoComponent.ScaleMode.OriginalSize;
+        			photoView.fitPhoto();
+        		}
+        );
+        fitWindowItem.addActionListener(
+        		event -> {
+        			photoView.defaultScaleMode = PhotoComponent.ScaleMode.FitWindow;
+        			photoView.fitPhoto();
+        		}
+        );
+        fitWidthItem.addActionListener(
+        		event -> {
+        			photoView.defaultScaleMode = PhotoComponent.ScaleMode.FitWidth;
+        			photoView.fitPhoto();
+        		}
+        );
+        fitHeightItem.addActionListener(
+        		event -> {
+        			photoView.defaultScaleMode = PhotoComponent.ScaleMode.FitHeight;
+        			photoView.fitPhoto();
+        		}
+        );
+        
     }
     
     private void setupToolBar() {
@@ -313,7 +361,7 @@ public class PhotoApplication extends JFrame {
         setColor.setIcon(colorIcon);
         setColor.addActionListener(
         		event -> {
-        			Color chosenColor = JColorChooser.showDialog(photoView, "Choose stroke and text color", photoView.currentColor);
+        			Color chosenColor = JColorChooser.showDialog(this, "Choose stroke and text color", photoView.currentColor);
         			if (chosenColor != null) {
         				photoView.currentColor = chosenColor;
         				colorImage(photoView.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
