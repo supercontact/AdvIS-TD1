@@ -7,8 +7,10 @@ Navigate by left/right keys or the two buttons (which appears when moving the cu
 Enable scrolling if image is too big.
 Show a background image that stays fixed when scrolling.
 Drag (left/right mouse key in view mode, right mouse key in flipped mode) to scroll.
-Mouse wheel to scale photo. The position where the mouse is pointing will stay fixed.
+Mouse wheel to navigate in album.
+Hold ctrl and use mouse wheel to scale photo. The position where the mouse is pointing will stay fixed.
 Resizing will be handled correctly.
+4 Scale modes available in menu (plus one option to scale up). Will persist when resizing unless mouse wheel scaling is used.
 Double click to flip photo (+animation).
 
 In flipped state:
