@@ -8,10 +8,8 @@ import java.awt.event.ItemEvent;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -36,51 +34,30 @@ public class PhotoApplication extends JFrame {
     
     public static PhotoApplication app;
     
-    JLabel status = new JLabel();
-    JMenuBar menuBar = new JMenuBar();;
-    JMenu fileMenu = new JMenu("File");
-    JMenu viewMenu = new JMenu("View");
-    JMenuItem importItem = new JMenuItem("Import");
-    JMenuItem deleteItem = new JMenuItem("Delete");
-    JMenuItem clearItem = new JMenuItem("Clean");
-    JMenuItem quitItem = new JMenuItem("Quit");
-    JMenuItem photoItem = new JMenuItem("Photo viewer");
-    JMenuItem browserItem = new JMenuItem("Browser");
-    JMenuItem splitItem = new JMenuItem("Split mode");
-    JCheckBoxMenuItem scaleSmallImageItem = new JCheckBoxMenuItem("Scale small photos");
-    JMenuItem originalSizeItem = new JMenuItem("Original size (100%)");
-    JMenuItem fitWindowItem = new JMenuItem("Fit to window");
-    JMenuItem fitWidthItem = new JMenuItem("Fit to width");
-    JMenuItem fitHeightItem = new JMenuItem("Fit to height");
-    PhotoContainer photoContainer = new PhotoContainer();
-    PhotoComponent photoComponent = new PhotoComponent();
-    FadePanel controlPanel = new FadePanel();
-    FadePanel controlPanelEditMode = new FadePanel();
-    JButton prev = new JButton();
-    JButton next = new JButton();
-    ImageIcon prevIcon;
-    ImageIcon nextIcon;
-    JToggleButton toggleStroke = new JToggleButton();
-    JToggleButton toggleStraightLine = new JToggleButton();
-    JToggleButton toggleRectangle = new JToggleButton();
-    JToggleButton toggleEllipse = new JToggleButton();
-    ImageIcon toggleStrokeIcon;
-    ImageIcon toggleStraightLineIcon;
-    ImageIcon toggleRectangleIcon;
-    ImageIcon toggleEllipseIcon;
-    ButtonGroup toggleDrawingGroup = new ButtonGroup();
-    JButton setColor = new JButton();
+    JLabel status;
+    JMenuBar menuBar;
+    JMenu fileMenu, viewMenu;
+    JMenuItem importItem, deleteItem, clearItem, quitItem;
+    JMenuItem photoItem, browserItem, splitItem;
+    JCheckBoxMenuItem scaleSmallImageItem;
+    JMenuItem originalSizeItem, fitWindowItem, fitWidthItem, fitHeightItem;
+    JToolBar tool;
+    ArrayList<JToggleButton> categories; 
+    PhotoContainer photoContainer;
+    PhotoComponent photoComponent;
+    FadePanel controlPanel, controlPanelEditMode;
+    JButton prev, next;
+    ImageIcon prevIcon, nextIcon;
+    JToggleButton toggleStroke, toggleStraightLine, toggleRectangle, toggleEllipse;
+    ImageIcon toggleStrokeIcon, toggleStraightLineIcon, toggleRectangleIcon, toggleEllipseIcon;
+    ButtonGroup toggleDrawingGroup;
+    JButton setColor;
     BufferedImage originalColorImage;
     ImageIcon colorIcon;
-    JLabel setStrokeWidthLabel = new JLabel();
-    JLabel setTextSizeLabel = new JLabel();
-    ImageIcon setStrokeWidthIcon;
-    ImageIcon setTextSizeIcon;
-    JSlider setStrokeWidth = new JSlider();
-    JSlider setTextSize = new JSlider();
-    JComboBox<String> setFont = new JComboBox<String>(GlobalSettings.fontStrings);
-    JToolBar tool = new JToolBar();
-    ArrayList<JToggleButton> categories = new ArrayList<>(); 
+    JSlider setStrokeWidth, setTextSize;
+    JLabel setStrokeWidthLabel, setTextSizeLabel;
+    ImageIcon setStrokeWidthIcon, setTextSizeIcon;
+    JComboBox<String> setFont;
 
     public static void main(String[] args) {
     	SavedSettings.loadSettings();
@@ -92,13 +69,14 @@ public class PhotoApplication extends JFrame {
         
         app = this;
         
+        ResourceManager.loadResources();
+        loadIcons();
+        
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
        
         setPreferredSize(new Dimension(1024, 768));
         setMinimumSize(new Dimension(300, 400));
         setVisible(true);
-        
-        loadIcons();
        
         setupMenuBar();
         setupToolBar();
@@ -111,29 +89,31 @@ public class PhotoApplication extends JFrame {
     }
     
     private void loadIcons() {
-    	try {
-    		prevIcon = new ImageIcon(ImageIO.read(GlobalSettings.prevIconLocation));
-    		nextIcon = new ImageIcon(ImageIO.read(GlobalSettings.nextIconLocation));
-    		toggleStrokeIcon = new ImageIcon(ImageIO.read(GlobalSettings.lineIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
-    		toggleStraightLineIcon = new ImageIcon(ImageIO.read(GlobalSettings.straightLineIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
-    		toggleRectangleIcon = new ImageIcon(ImageIO.read(GlobalSettings.rectangleIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
-			toggleEllipseIcon = new ImageIcon(ImageIO.read(GlobalSettings.ellipseIconLocation).getScaledInstance(40, 40, Image.SCALE_SMOOTH));
-			setStrokeWidthIcon = new ImageIcon(ImageIO.read(GlobalSettings.lineWidthIconLocation).getScaledInstance(30, 30, Image.SCALE_SMOOTH));
-			setTextSizeIcon = new ImageIcon(ImageIO.read(GlobalSettings.textSizeIconLocation).getScaledInstance(30, 30, Image.SCALE_SMOOTH));
-			originalColorImage = (BufferedImage)ImageIO.read(GlobalSettings.colorIconLocation);
-			colorIcon = new ImageIcon(ImageIO.read(GlobalSettings.colorIconLocation));
-		} catch (IOException e) {
-			showStatusText("Resources loading error!");
-			e.printStackTrace();
-		}
+    	prevIcon = new ImageIcon(ResourceManager.prevIcon);
+    	nextIcon = new ImageIcon(ResourceManager.nextIcon);
+    	toggleStrokeIcon = new ImageIcon(ResourceManager.lineIcon.getScaledInstance(40, 40, Image.SCALE_SMOOTH));
+    	toggleStraightLineIcon = new ImageIcon(ResourceManager.straightLineIcon.getScaledInstance(40, 40, Image.SCALE_SMOOTH));
+    	toggleRectangleIcon = new ImageIcon(ResourceManager.rectangleIcon.getScaledInstance(40, 40, Image.SCALE_SMOOTH));
+    	toggleEllipseIcon = new ImageIcon(ResourceManager.ellipseIcon.getScaledInstance(40, 40, Image.SCALE_SMOOTH));
+    	setStrokeWidthIcon = new ImageIcon(ResourceManager.lineWidthIcon.getScaledInstance(30, 30, Image.SCALE_SMOOTH));
+    	setTextSizeIcon = new ImageIcon(ResourceManager.textSizeIcon.getScaledInstance(30, 30, Image.SCALE_SMOOTH));
+    	originalColorImage = ResourceManager.colorIcon;
+    	colorIcon = new ImageIcon(ResourceManager.cloneImage(ResourceManager.colorIcon));
     }
     
     private void setupMenuBar() {
+    	menuBar = new JMenuBar();
     	setJMenuBar(menuBar);
         
+    	fileMenu = new JMenu("File");
+        viewMenu = new JMenu("View");
         menuBar.add(fileMenu);
         menuBar.add(viewMenu);
        
+        importItem = new JMenuItem("Import");
+        deleteItem = new JMenuItem("Delete");
+        clearItem = new JMenuItem("Clean");
+        quitItem = new JMenuItem("Quit");
         fileMenu.add(importItem);
         fileMenu.add(deleteItem);
         fileMenu.add(clearItem);
@@ -164,7 +144,14 @@ public class PhotoApplication extends JFrame {
         		event -> dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING))
         );
        
-       
+        photoItem = new JMenuItem("Photo viewer");
+        browserItem = new JMenuItem("Browser");
+        splitItem = new JMenuItem("Split mode");
+        scaleSmallImageItem = new JCheckBoxMenuItem("Scale small photos");
+        originalSizeItem = new JMenuItem("Original size (100%)");
+        fitWindowItem = new JMenuItem("Fit to window");
+        fitWidthItem = new JMenuItem("Fit to width");
+        fitHeightItem = new JMenuItem("Fit to height");
         viewMenu.add(photoItem);
         viewMenu.add(browserItem);
         viewMenu.add(splitItem);
@@ -208,8 +195,10 @@ public class PhotoApplication extends JFrame {
     }
     
     private void setupToolBar() {
+    	tool = new JToolBar();
     	add(tool, BorderLayout.NORTH);
     	
+    	categories = new ArrayList<>(); 
     	categories.add(new JToggleButton("Family"));
         categories.add(new JToggleButton("Vacation"));
         categories.add(new JToggleButton("School"));
@@ -233,10 +222,13 @@ public class PhotoApplication extends JFrame {
     }
     
     private void setupMainArea() {
+    	photoContainer = new PhotoContainer();
+        photoComponent = new PhotoComponent();
     	add(photoContainer, BorderLayout.CENTER);
-        add(status, BorderLayout.SOUTH);
-        
         photoContainer.setMainPhotoComponent(photoComponent);
+    	
+    	status = new JLabel();
+        add(status, BorderLayout.SOUTH);
        
         showStatusText("Status");
     }
@@ -245,14 +237,18 @@ public class PhotoApplication extends JFrame {
     	Insets normalInsets = new Insets(0, 10, 0, 10);
     	Insets zeroInsets = new Insets(0, 0, 0, 0);
     	
+    	controlPanel = new FadePanel();
+        controlPanelEditMode = new FadePanel();
     	photoContainer.add(controlPanel, 0);
     	photoContainer.add(controlPanelEditMode, 1);
         photoContainer.controlPanel = controlPanel;
         photoContainer.controlPanelEditMode = controlPanelEditMode;
         
-        controlPanel.setOpaque(false);
+        prev = new JButton();
+        next = new JButton();
         controlPanel.add(prev);
         controlPanel.add(next);
+        controlPanel.setOpaque(false);
         
         prev.setIcon(prevIcon);
         prev.setMargin(normalInsets);
@@ -265,6 +261,16 @@ public class PhotoApplication extends JFrame {
         		event -> photoComponent.nextPhoto()
         );
         
+        toggleStroke = new JToggleButton();
+        toggleStraightLine = new JToggleButton();
+        toggleRectangle = new JToggleButton();
+        toggleEllipse = new JToggleButton();
+        setColor = new JButton();
+        setStrokeWidthLabel = new JLabel();
+        setStrokeWidth = new JSlider();
+        setTextSizeLabel = new JLabel();
+        setTextSize = new JSlider();
+        setFont = new JComboBox<String>(GlobalSettings.fontStrings);
         controlPanelEditMode.setOpaque(false);
         controlPanelEditMode.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
         controlPanelEditMode.add(toggleStroke);
@@ -282,6 +288,7 @@ public class PhotoApplication extends JFrame {
         controlPanelEditMode.add(new JLabel("   "));
         controlPanelEditMode.add(setFont);
         
+        toggleDrawingGroup = new ButtonGroup();
         toggleDrawingGroup.add(toggleStroke);
         toggleDrawingGroup.add(toggleStraightLine);
         toggleDrawingGroup.add(toggleRectangle);

@@ -4,9 +4,7 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.io.IOException;
 
-import javax.imageio.ImageIO;
 import javax.swing.JLayeredPane;
 import javax.swing.JScrollPane;
 
@@ -41,13 +39,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener{
 		scrollPane.getViewport().setOpaque(false);
 		scrollPane.setOpaque(false);
 		
-		try {
-			background = ImageIO.read(GlobalSettings.backgroundImageLocation);
-		} catch (IOException e) {
-			e.printStackTrace();
-			PhotoApplication.showStatusText("Resources loading error!");
-		}
-		
+		background = ResourceManager.backgroundImage;
 	}
 	
 	public void setMainPhotoComponent(PhotoComponent mainPhoto) {

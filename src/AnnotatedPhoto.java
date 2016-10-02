@@ -21,6 +21,7 @@ public class AnnotatedPhoto implements Serializable {
 	private int addonCount = 0;
 	
 	transient public Image image;
+	transient public Image thumbnail;
 	transient public boolean imageLoaded = false;
 	
 	public AnnotatedPhoto(File url) {
@@ -34,6 +35,7 @@ public class AnnotatedPhoto implements Serializable {
 	public boolean loadPhoto() {
 		try {
 			image = ImageIO.read(imageURL);
+			thumbnail = image.getScaledInstance(GlobalSettings.thumbnailSize, GlobalSettings.thumbnailSize, Image.SCALE_SMOOTH);
 			imageLoaded = true;
 			return true;
 		} catch (IOException e) {

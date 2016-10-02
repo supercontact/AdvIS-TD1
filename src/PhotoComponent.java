@@ -25,10 +25,8 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
-import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
@@ -102,13 +100,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public PhotoComponent() {
 		model = new PhotoBrowserModel();
 		model.loadAlbum();
-		try {
-			frame = ImageIO.read(GlobalSettings.frameImageLocation);
-			errorImage = ImageIO.read(GlobalSettings.errorImageLocation);
-		} catch (IOException e) {
-			e.printStackTrace();
-			PhotoApplication.showStatusText("Resources loading error!");
-		}
+		
+		frame = ResourceManager.frameImage;
+		errorImage = ResourceManager.errorImage;
 	}
 	
 	public void init() {
