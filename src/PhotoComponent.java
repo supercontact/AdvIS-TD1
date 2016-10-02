@@ -53,9 +53,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public final double lineSpacing = 1.2;
 	public final int fps = 60;
 	public final long flippingAnimationTime = 400;
+	public final float controlPanelAlphaWhenDrawing = 0.2f;
 	public final long savePeriod = 5000;
-	public final int controlPanelOpaqueHeight = 100;
-	public final int controlPanelTransparentHeight = 200;
 	
 	// States and status
 	public ScaleMode defaultScaleMode = ScaleMode.OriginalSize;
@@ -69,17 +68,10 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public Color currentColor = new Color(0x19, 0x2C, 0x3C);
 	public String currentFontName = "Arial";
 	
-	// Links
-	public FadePanel controlPanel;
-	public FadePanel controlPanelEditMode;
-	
-	// Resource locations
-	public File backgroundImageLocation = GlobalSettings.backgroundImageLocation;
-	public File frameImageLocation = GlobalSettings.frameImageLocation;
-	public File errorImageLocation = GlobalSettings.errorImageLocation;
+	// Link
+	public PhotoContainer container;
 	
 	// Loaded resources
-	private Image background;
 	private Image frame;
 	private Image errorImage;
 	
@@ -90,14 +82,12 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private boolean initiated = false;
 	private Timer timer;
 	private Point prevMouseDragPos;
-	private Point mousePos;
-	private int scaleLevel = 0;
 	private boolean isLocked = false;
 	private boolean isFlippingToBack = false;
 	private boolean isFlippingToFront = false;
 	private boolean isEditingText = false;
 	private long flippingAnimationProgress = 0;
-	private double imageScaleXBeforeFlipping = 1;
+	private double imageScaleXMultiplier = 1;
 	private AnnotatedPhoto.StrokeMark currentStroke;
 	private AnnotatedPhoto.PrimitiveMark currentPrimitive;
 	private AnnotatedPhoto.Annotation currentAnnotation;
@@ -105,18 +95,16 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private Point annotationEditingPoint;
 	private boolean canStartDrawing = false;
 	private boolean changed = false;
+	private boolean customScaled = false;
 	private long lastSaveTime = 0;
-	private FadePanel currentControlPanel;
-	private float controlPanelAlphaMultiplier = 1;
 	
 
 	public PhotoComponent() {
 		model = new PhotoBrowserModel();
 		model.loadAlbum();
 		try {
-			background = ImageIO.read(backgroundImageLocation);
-			frame = ImageIO.read(frameImageLocation);
-			errorImage = ImageIO.read(errorImageLocation);
+			frame = ImageIO.read(GlobalSettings.frameImageLocation);
+			errorImage = ImageIO.read(GlobalSettings.errorImageLocation);
 		} catch (IOException e) {
 			e.printStackTrace();
 			PhotoApplication.showStatusText("Resources loading error!");
@@ -138,14 +126,16 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	
 	public void reset() {
-		scaleLevel = 0;
 		model.flipped = false;
 		isEditingText = false;
 		currentAnnotation = null;
 		if (model.isShowingPhoto() && model.getAnnotatedPhoto().image == null) {
 			model.getAnnotatedPhoto().image = errorImage;
 		}
+		customScaled = false;
 		fitPhoto();
+		revalidate();
+		repaint();
 	}
 	
 	public boolean saveAlbum() {
@@ -201,7 +191,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	public void flipPhoto() {
 		if (!isLocked) {
 			isEditingText = false;
-			imageScaleXBeforeFlipping = imageScaleY;
 			if (!model.flipped) {
 				isFlippingToBack = true;
 			} else {
@@ -209,6 +198,10 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			}
 			isLocked = true;
 		}
+	}
+	
+	public boolean isFlipped() {
+		return model.flipped;
 	}
 	
 	public void scalePhoto(int delta, Point pivot) {
@@ -228,6 +221,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		double factor = imageScaleX / oldScale - 1;
 		scrollPhoto((int)(- factor * pos.x), (int)(- factor * pos.y));
 		
+		customScaled = true;
 		repaint();
 	}
 	
@@ -264,9 +258,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		}
 		imageScaleY = imageScaleX;
 		updateComponentSize();
-		
-		revalidate();
-		repaint();
 	}
 	
 	public void scrollPhoto(int dx, int dy) {
@@ -274,6 +265,12 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		visible.x -= dx;
 		visible.y -= dy;
 		scrollRectToVisible(visible);
+	}
+	
+	public void setScaleMode(ScaleMode mode) {
+		defaultScaleMode = mode;
+		fitPhoto();
+		customScaled = false;
 	}
 	
 	public void drawStrokeTo(Point pos) {
@@ -355,13 +352,16 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	// All the painting methods
 	@Override
 	public void paintComponent(Graphics graphics) {	
-		super.paintComponent(graphics);
+		if (!customScaled) {
+			fitPhoto();
+			revalidate();
+		}
+		imageScaleX = imageScaleY * imageScaleXMultiplier;
 		
 		Graphics2D g = (Graphics2D)graphics;
 		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		
-		paintBackground(graphics);
 		if (!initiated) return;
 		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.isShowingPhoto()) {
 			Shape oldClip = g.getClip();
@@ -384,27 +384,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			
 			g.setClip(oldClip);
 			paintPhotoFrame(graphics);
-		}
-		
-		updateControlPanel();
-	}
-	
-	private void paintBackground(Graphics graphics) {
-		// The background stays fixed when scrolling
-		int w = getParent().getParent().getWidth();
-		int h = getParent().getParent().getHeight();
-		int dx = -getX();
-		int dy = -getY();
-		int imgW = background.getWidth(null);
-		int imgH = background.getHeight(null);
-		if (w * imgH > h * imgW) {
-			// Width is too large
-			int imgH2 = h * imgW / w;
-			graphics.drawImage(background, dx, dy, dx + w, dy + h, 0, (imgH - imgH2) / 2, imgW, (imgH + imgH2) / 2, null);
-		} else {
-			// Height is too large
-			int imgW2 = w * imgH / h;
-			graphics.drawImage(background, dx, dy, dx + w, dy + h, (imgW - imgW2) / 2, 0, (imgW + imgW2) / 2, imgH, null);
 		}
 	}
 	
@@ -605,39 +584,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		setPreferredSize(new Dimension(w, h));
 	}
 	
-	private void updateControlPanel() {
-		if (!model.flipped && currentControlPanel != controlPanel) {
-			controlPanelEditMode.setVisible(false);
-			currentControlPanel = controlPanel;
-		} else if (model.flipped && currentControlPanel != controlPanelEditMode) {
-			controlPanel.setVisible(false);
-			currentControlPanel = controlPanelEditMode;
-		}
-		
-		Dimension panelSize = currentControlPanel.getPreferredSize();
-		currentControlPanel.setSize(panelSize);
-		Point location = new Point();
-		location.x = getParent().getParent().getWidth() / 2 - getX() - panelSize.width / 2;
-		location.y = getParent().getParent().getHeight() - getY() - panelSize.height - 20;
-		currentControlPanel.setLocation(location);
-	}
-	
-	private void updateControlPanelFade() {
-		if (currentControlPanel == null) return;
-		int height = getParent().getParent().getHeight() - componentToContainerCoordinates(mousePos).y;
-		if (height <= controlPanelOpaqueHeight) {
-			currentControlPanel.setAlpha(controlPanelAlphaMultiplier);
-			currentControlPanel.setVisible(true);
-		} else if (height >= controlPanelTransparentHeight) {
-			currentControlPanel.setAlpha(0);
-			currentControlPanel.setVisible(false);
-		} else {
-			currentControlPanel.setAlpha(controlPanelAlphaMultiplier * (height - controlPanelTransparentHeight) / (controlPanelOpaqueHeight - controlPanelTransparentHeight));
-			currentControlPanel.setVisible(true);
-		}
-		currentControlPanel.repaint();
-	}
-	
 	// Find the best prefix of the string that fits in the given space. End with a \n or space if possible.
 	private int trimString(String str, int spaceInPixel, FontMetrics metrics) {
 		int cutIndex = str.indexOf('\n');
@@ -683,12 +629,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		Rectangle rect = calculateImageRect();
 		return new Point((int)(p.x * imageScaleX + rect.x), (int)(p.y * imageScaleY + rect.y));
 	}
-	private Point componentToContainerCoordinates(Point p) {
-		return new Point(p.x + getX(), p.y + getY());
-	}
-	private Point containerToComponentCoordinates(Point p) {
-		return new Point(p.x - getX(), p.y - getY());
-	}
 
 	
 	
@@ -715,16 +655,14 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		if (calculateImageRect().contains(prevMouseDragPos) && model.flipped && !isLocked) {
 			canStartDrawing = true;
 		}
-		controlPanelAlphaMultiplier = 0.2f;
-		updateControlPanelFade();
+		container.requestControlPanelHiding(controlPanelAlphaWhenDrawing);
 	}
 	@Override
 	public void mouseReleased(MouseEvent e) {
 		currentStroke = null;
 		currentPrimitive = null;
 		canStartDrawing = false;
-		controlPanelAlphaMultiplier = 1;
-		updateControlPanelFade();
+		container.requestControlPanelHiding(1);
 	}
 	@Override
 	public void mouseDragged(MouseEvent e) {
@@ -738,18 +676,25 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			} else {
 				scrollPhoto(e.getPoint().x - prevMouseDragPos.x, e.getPoint().y - prevMouseDragPos.y);
 			}
-			mousePos = e.getPoint();
-			updateControlPanelFade();
 		}
 	}
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		scalePhoto(e.getWheelRotation(), e.getPoint());
+		if (e.isControlDown()) {
+			// Scaling
+			scalePhoto(e.getWheelRotation(), e.getPoint());
+		} else {
+			// Navigating
+			if (e.getWheelRotation() > 0) {
+				nextPhoto();
+			} else {
+				prevPhoto();
+			}
+		}
 	}
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		mousePos = e.getPoint();
-		updateControlPanelFade();
+		// Do nothing
 	}
 	@Override
 	public void mouseEntered(MouseEvent e) {
@@ -826,16 +771,15 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			}     
 			model.flipped = (2 * flippingAnimationProgress < flippingAnimationTime) ? isFlippingToFront : isFlippingToBack;
 			double scale = Math.abs(Math.cos(Math.PI * flippingAnimationProgress / flippingAnimationTime));
-			imageScaleX = imageScaleXBeforeFlipping * scale;
-			controlPanelAlphaMultiplier = (float)scale;
-			updateControlPanelFade();
+			imageScaleXMultiplier = scale;
+			container.requestControlPanelHiding((float)scale);
 			repaint();
 			if (flippingAnimationProgress == flippingAnimationTime) {
 				flippingAnimationProgress = 0;
 				isFlippingToBack = false;
 				isFlippingToFront = false;
 				isLocked = false;
-				imageScaleX = imageScaleXBeforeFlipping;
+				imageScaleXMultiplier = 1;
 			}
 		}
 	}

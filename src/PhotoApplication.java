@@ -24,8 +24,6 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JToggleButton;
@@ -54,9 +52,8 @@ public class PhotoApplication extends JFrame {
     JMenuItem fitWindowItem = new JMenuItem("Fit to window");
     JMenuItem fitWidthItem = new JMenuItem("Fit to width");
     JMenuItem fitHeightItem = new JMenuItem("Fit to height");
-    JPanel body = new JPanel();
-    JScrollPane scrollPane = new JScrollPane();
-    PhotoComponent photoView = new PhotoComponent();
+    PhotoContainer photoContainer = new PhotoContainer();
+    PhotoComponent photoComponent = new PhotoComponent();
     FadePanel controlPanel = new FadePanel();
     FadePanel controlPanelEditMode = new FadePanel();
     JButton prev = new JButton();
@@ -108,7 +105,7 @@ public class PhotoApplication extends JFrame {
         setupMainArea();
         setupControlPanel();
         
-        photoView.init();
+        photoComponent.init();
        
         pack();
     }
@@ -147,7 +144,7 @@ public class PhotoApplication extends JFrame {
         );
         deleteItem.addActionListener(
         		event -> {
-        			if (photoView.deleteCurrentPhoto()) {
+        			if (photoComponent.deleteCurrentPhoto()) {
         				showStatusText("Photo removed (The original file is still there).");
         			} else {
         				showStatusText("No photo to remove!");
@@ -156,7 +153,7 @@ public class PhotoApplication extends JFrame {
         );
         clearItem.addActionListener(
         		event -> {
-        			if (photoView.clearCurrentPhoto()) {
+        			if (photoComponent.clearCurrentPhoto()) {
         				showStatusText("All annotations and strokes are removed from the photo.");
         			} else {
         				showStatusText("No photo to clean!");
@@ -190,34 +187,22 @@ public class PhotoApplication extends JFrame {
         );
         scaleSmallImageItem.addActionListener(
         		event -> {
-        			photoView.scaleSmallPhoto = scaleSmallImageItem.isSelected();
-        			photoView.fitPhoto();
+        			photoComponent.scaleSmallPhoto = scaleSmallImageItem.isSelected();
+        			photoComponent.fitPhoto();
         		}
         		
         );
         originalSizeItem.addActionListener(
-        		event -> {
-        			photoView.defaultScaleMode = PhotoComponent.ScaleMode.OriginalSize;
-        			photoView.fitPhoto();
-        		}
+        		event -> photoComponent.setScaleMode(PhotoComponent.ScaleMode.OriginalSize)
         );
         fitWindowItem.addActionListener(
-        		event -> {
-        			photoView.defaultScaleMode = PhotoComponent.ScaleMode.FitWindow;
-        			photoView.fitPhoto();
-        		}
+        		event -> photoComponent.setScaleMode(PhotoComponent.ScaleMode.FitWindow)
         );
         fitWidthItem.addActionListener(
-        		event -> {
-        			photoView.defaultScaleMode = PhotoComponent.ScaleMode.FitWidth;
-        			photoView.fitPhoto();
-        		}
+        		event -> photoComponent.setScaleMode(PhotoComponent.ScaleMode.FitWidth)
         );
         fitHeightItem.addActionListener(
-        		event -> {
-        			photoView.defaultScaleMode = PhotoComponent.ScaleMode.FitHeight;
-        			photoView.fitPhoto();
-        		}
+        		event -> photoComponent.setScaleMode(PhotoComponent.ScaleMode.FitHeight)
         );
         
     }
@@ -248,14 +233,10 @@ public class PhotoApplication extends JFrame {
     }
     
     private void setupMainArea() {
-    	add(body, BorderLayout.CENTER);
+    	add(photoContainer, BorderLayout.CENTER);
         add(status, BorderLayout.SOUTH);
         
-        body.setLayout(new BorderLayout());
-        body.add(scrollPane, BorderLayout.CENTER);
-        
-        scrollPane.setWheelScrollingEnabled(false);
-        scrollPane.setViewportView(photoView);
+        photoContainer.setMainPhotoComponent(photoComponent);
        
         showStatusText("Status");
     }
@@ -264,10 +245,10 @@ public class PhotoApplication extends JFrame {
     	Insets normalInsets = new Insets(0, 10, 0, 10);
     	Insets zeroInsets = new Insets(0, 0, 0, 0);
     	
-    	photoView.add(controlPanel);
-        photoView.add(controlPanelEditMode);
-        photoView.controlPanel = controlPanel;
-        photoView.controlPanelEditMode = controlPanelEditMode;
+    	photoContainer.add(controlPanel, 0);
+    	photoContainer.add(controlPanelEditMode, 1);
+        photoContainer.controlPanel = controlPanel;
+        photoContainer.controlPanelEditMode = controlPanelEditMode;
         
         controlPanel.setOpaque(false);
         controlPanel.add(prev);
@@ -276,12 +257,12 @@ public class PhotoApplication extends JFrame {
         prev.setIcon(prevIcon);
         prev.setMargin(normalInsets);
         prev.addActionListener(
-        		event -> photoView.prevPhoto()
+        		event -> photoComponent.prevPhoto()
         );
         next.setIcon(nextIcon);
         next.setMargin(normalInsets);
         next.addActionListener(
-        		event -> photoView.nextPhoto()
+        		event -> photoComponent.nextPhoto()
         );
         
         controlPanelEditMode.setOpaque(false);
@@ -310,30 +291,30 @@ public class PhotoApplication extends JFrame {
         toggleStroke.setMargin(zeroInsets);
         toggleStroke.setIcon(toggleStrokeIcon);
         toggleStroke.addActionListener(
-        		event -> photoView.isCreatingPrimitive = false
+        		event -> photoComponent.isCreatingPrimitive = false
         );
         toggleStraightLine.setIcon(toggleStraightLineIcon);
         toggleStraightLine.setMargin(zeroInsets);
         toggleStraightLine.addActionListener(
         		event -> {
-        			photoView.isCreatingPrimitive = true;
-        			photoView.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.StraightLine;
+        			photoComponent.isCreatingPrimitive = true;
+        			photoComponent.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.StraightLine;
         		}
         );
         toggleRectangle.setIcon(toggleRectangleIcon);
         toggleRectangle.setMargin(zeroInsets);
         toggleRectangle.addActionListener(
         		event -> {
-        			photoView.isCreatingPrimitive = true;
-        			photoView.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.Rectangle;
+        			photoComponent.isCreatingPrimitive = true;
+        			photoComponent.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.Rectangle;
         		}
         );
         toggleEllipse.setIcon(toggleEllipseIcon);
         toggleEllipse.setMargin(zeroInsets);
         toggleEllipse.addActionListener(
         		event -> {
-        			photoView.isCreatingPrimitive = true;
-        			photoView.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.Ellipse;
+        			photoComponent.isCreatingPrimitive = true;
+        			photoComponent.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.Ellipse;
         		}
         );
         
@@ -344,7 +325,7 @@ public class PhotoApplication extends JFrame {
         setStrokeWidth.setValue(5);
         setStrokeWidth.setPreferredSize(new Dimension(150, 30));
         setStrokeWidth.addChangeListener(
-        		event -> photoView.currentStrokeWidth = setStrokeWidth.getValue()
+        		event -> photoComponent.currentStrokeWidth = setStrokeWidth.getValue()
         );
         
         setTextSizeLabel.setIcon(setTextSizeIcon);
@@ -354,24 +335,24 @@ public class PhotoApplication extends JFrame {
         setTextSize.setValue(15);
         setTextSize.setPreferredSize(new Dimension(150, 30));
         setTextSize.addChangeListener(
-        		event -> photoView.currentTextSize = setTextSize.getValue()
+        		event -> photoComponent.currentTextSize = setTextSize.getValue()
         );
         
         setColor.setMargin(zeroInsets);
         setColor.setIcon(colorIcon);
         setColor.addActionListener(
         		event -> {
-        			Color chosenColor = JColorChooser.showDialog(this, "Choose stroke and text color", photoView.currentColor);
+        			Color chosenColor = JColorChooser.showDialog(this, "Choose stroke and text color", photoComponent.currentColor);
         			if (chosenColor != null) {
-        				photoView.currentColor = chosenColor;
-        				colorImage(photoView.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
+        				photoComponent.currentColor = chosenColor;
+        				colorImage(photoComponent.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
         			}
         		}
         );
-        colorImage(photoView.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
+        colorImage(photoComponent.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
         
         setFont.addActionListener(
-        		event -> photoView.currentFontName = (String)setFont.getSelectedItem()
+        		event -> photoComponent.currentFontName = (String)setFont.getSelectedItem()
         );
     }
     
@@ -406,7 +387,7 @@ public class PhotoApplication extends JFrame {
 			return;
 		}
 		File[] files = fileChooser.getSelectedFiles();
-		photoView.addPhotos(files);
+		photoComponent.addPhotos(files);
 		SavedSettings.settings.defaultFileLocation = files[0].getParentFile();
 		SavedSettings.saveSettings();
 		showStatusText(files.length + " photo(s) are selected. Showing the first photo.");
