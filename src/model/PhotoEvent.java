@@ -44,7 +44,9 @@ public class PhotoEvent {
 		PhotoEvent e = new PhotoEvent(model, Type.ViewIndexChanged);
 		e.oldIndex = oldIndex;
 		e.newIndex = newIndex;
-		e.photo = model.getAnnotatedPhoto(newIndex);
+		if (newIndex != -1) {
+			e.photo = model.getAnnotatedPhoto(newIndex);
+		}
 		return e;
 	}
 	public static PhotoEvent CreatePhotoFlippedEvent(PhotoApplicationModel model, boolean flipped) {

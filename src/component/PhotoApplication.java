@@ -80,6 +80,7 @@ public class PhotoApplication extends JFrame {
         
         model = new PhotoApplicationModel();
         model.setAlbumLocation(GlobalSettings.savedAlbumLocation);
+        model.setThumbnailSize(GlobalSettings.thumbnailSize);
         model.loadAlbum();
         ResourceManager.loadResources();
         loadIcons();

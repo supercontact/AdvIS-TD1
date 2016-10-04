@@ -60,6 +60,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 		background = ResourceManager.backgroundImage;
 		
 		photoIconWall = new JPanel();
+		photoIconWall.setOpaque(false);
 		photoIconWall.setLayout(new FlowLayout(FlowLayout.CENTER, 1, 1));
 		iconWallHandler = new IconWallMouseEventHandler(this, photoIconWall);
 		photoIconWall.addMouseListener(iconWallHandler);
@@ -187,13 +188,17 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 		
 		Dimension wallSize = getSize();
 		wallSize.width -= epsilon + scrollPane.getVerticalScrollBar().getWidth();
+		wallSize.height = 0;
 		photoIconWall.setPreferredSize(wallSize);
 		photoIconWall.revalidate();
 		
-		PhotoIcon lastIcon = photoIcons.get(photoIcons.size() - 1);
-		wallSize.height = lastIcon.getY() + lastIcon.getHeight();
-		photoIconWall.setPreferredSize(wallSize);
-		photoIconWall.revalidate();
+		if (model.isShowingPhoto()) {
+			PhotoIcon lastIcon = photoIcons.get(photoIcons.size() - 1);
+			wallSize.height = lastIcon.getY() + lastIcon.getHeight();
+			photoIconWall.setPreferredSize(wallSize);
+			photoIconWall.revalidate();
+		}
+		photoIconWall.repaint();
 	}
 
 	
@@ -293,6 +298,22 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 	public void photoEventReceived(PhotoEvent e) {
 		if (e.type == PhotoEvent.Type.ViewModeChanged) {
 			switchViewMode(e.oldViewMode, e.newViewMode);
+		} else if (e.type == PhotoEvent.Type.PhotoAdded) {
+			PhotoIcon newIcon = new PhotoIcon(e.photo);
+			photoIcons.add(newIcon);
+			photoIconWall.add(newIcon);
+			updateIconWall();
+		} else if (e.type == PhotoEvent.Type.PhotoRemoved) {
+			PhotoIcon iconRemoved = null;
+			for (int i = 0; i < photoIcons.size(); i++) {
+				if (photoIcons.get(i).photo == e.photo) {
+					iconRemoved = photoIcons.get(i);
+					photoIcons.remove(i);
+					break;
+				}
+			}
+			photoIconWall.remove(iconRemoved);
+			updateIconWall();
 		}
 	}
 }

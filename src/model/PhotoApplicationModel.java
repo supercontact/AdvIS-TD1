@@ -21,6 +21,7 @@ public class PhotoApplicationModel {
 	private boolean flipped = false;
 	
 	private File albumLocation;
+	private int thumbnailSize = 256;
 	
 	private ArrayList<PhotoListener> listeners;
 	
@@ -94,7 +95,9 @@ public class PhotoApplicationModel {
 		currentViewingIndex = album.photoList.size();
 		flipped = false;
 		for (int i = 0; i < url.length; i++) {
-			album.importNewPhoto(url[i]).loadPhoto();
+			AnnotatedPhoto newPhoto = album.importNewPhoto(url[i]);
+			newPhoto.loadPhoto();
+			newPhoto.generateThumbnail(thumbnailSize);
 		}
 		saveAlbum();
 		for (int i = currentViewingIndex; i < album.photoList.size(); i++) {
@@ -111,11 +114,11 @@ public class PhotoApplicationModel {
 		AnnotatedPhoto oldPhoto = album.photoList.get(index);
 		album.removePhoto(index);
 		saveAlbum();
-		firePhotoEvent(PhotoEvent.CreatePhotoRemovedEvent(this, oldPhoto));
 		if (album.photoList.size() <= currentViewingIndex) {
 			currentViewingIndex--;
 			firePhotoEvent(PhotoEvent.CreateViewIndexChangedEvent(this, currentViewingIndex + 1, currentViewingIndex));
 		}
+		firePhotoEvent(PhotoEvent.CreatePhotoRemovedEvent(this, oldPhoto));
 	}
 	
 	public void clearPhoto() {
@@ -135,6 +138,10 @@ public class PhotoApplicationModel {
 		albumLocation = url;
 	}
 	
+	public void setThumbnailSize(int size) {
+		thumbnailSize = size;
+	}
+	
 	public boolean saveAlbum() {
 		if (album.saveAlbum(albumLocation)) {
 			firePhotoEvent(PhotoEvent.CreateAlbumSavedEvent(this));
@@ -152,8 +159,10 @@ public class PhotoApplicationModel {
 			currentViewingIndex = 0;
 		}
 		album.loadAllPhotos();
+		album.generateAllThumbnails(thumbnailSize);
 		return true;
 	}
+	
 	
 	// Events
 	public void addPhotoListener(PhotoListener listener) {

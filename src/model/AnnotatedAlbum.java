@@ -34,6 +34,12 @@ public class AnnotatedAlbum implements Serializable {
 		}
 	}
 	
+	public void generateAllThumbnails(int size) {
+		for (AnnotatedPhoto photo : photoList) {
+			photo.generateThumbnail(size);
+		}
+	}
+	
 	public boolean saveAlbum(File url) {
 		return SerializationControl.save(this, url);
 	}
