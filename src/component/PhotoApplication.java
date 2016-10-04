@@ -34,8 +34,10 @@ import custom.ResourceManager;
 import custom.SavedSettings;
 import model.AnnotatedPhoto;
 import model.PhotoApplicationModel;
+import model.PhotoEvent;
+import model.PhotoListener;
 
-public class PhotoApplication extends JFrame {
+public class PhotoApplication extends JFrame implements PhotoListener {
 
     private static final long serialVersionUID = 1L;
     
@@ -82,6 +84,7 @@ public class PhotoApplication extends JFrame {
         model.setAlbumLocation(GlobalSettings.savedAlbumLocation);
         model.setThumbnailSize(GlobalSettings.thumbnailSize);
         model.loadAlbum();
+        
         ResourceManager.loadResources();
         loadIcons();
         
@@ -97,6 +100,9 @@ public class PhotoApplication extends JFrame {
         setupControlPanel();
        
         pack();
+        
+        model.addPhotoListener(this);
+        model.setViewMode(PhotoApplicationModel.ViewMode.Browser);
     }
     
     private void loadIcons() {
@@ -134,24 +140,10 @@ public class PhotoApplication extends JFrame {
         		event -> importImages()
         );
         deleteItem.addActionListener(
-        		event -> {
-        			if (model.isShowingPhoto()) {
-        				model.deletePhoto();
-        				showStatusText("Photo removed (The original file is still there).");
-        			} else {
-        				showStatusText("No photo to remove!");
-        			}
-        		}
+        		event -> deleteImages()
         );
         clearItem.addActionListener(
-        		event -> {
-        			if (model.isShowingPhoto()) {
-        				model.clearPhoto();
-        				showStatusText("All annotations and strokes are removed from the photo.");
-        			} else {
-        				showStatusText("No photo to clean!");
-        			}
-        		}
+        		event -> clearImages()
         );
         quitItem.addActionListener(
         		event -> dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING))
@@ -245,8 +237,6 @@ public class PhotoApplication extends JFrame {
         photoComponent = new PhotoComponent(model);
     	add(photoContainer, BorderLayout.CENTER);
         photoContainer.setMainPhotoComponent(photoComponent);
-        
-        model.setViewMode(PhotoApplicationModel.ViewMode.Browser);
     	
     	status = new JLabel();
         add(status, BorderLayout.SOUTH);
@@ -398,6 +388,7 @@ public class PhotoApplication extends JFrame {
     	}
     }
 	
+    // Button callback
 	public void importImages() {
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setCurrentDirectory(SavedSettings.settings.defaultFileLocation);
@@ -421,8 +412,53 @@ public class PhotoApplication extends JFrame {
 		showStatusText(files.length + " photo(s) are selected. Showing the first photo.");
 	}
 	
+	public void deleteImages() {
+		if (model.isShowingPhoto()) {
+			if (model.getViewMode() == PhotoApplicationModel.ViewMode.PhotoViewer) {
+				model.deletePhoto();
+				showStatusText("Current photo removed (The original file is still there).");
+			} else if (model.getViewMode() == PhotoApplicationModel.ViewMode.Browser) {
+				model.deleteSelectedPhotos();
+				showStatusText("Selected photos removed (The original files are still there).");
+			}
+		} else {
+			showStatusText("No photo to remove!");
+		}
+	}
+	
+	public void clearImages() {
+		if (model.isShowingPhoto()) {
+			model.clearPhoto();
+			showStatusText("All annotations and strokes are removed from the photo.");
+		} else {
+			showStatusText("No photo to clean!");
+		}
+	}
+	
 	public static void showStatusText(String text) {
 		app.status.setText(text);
+	}
+
+	// PhotoListener: Process photo model events.
+	@Override
+	public void photoEventReceived(PhotoEvent e) {
+		if (e.type == PhotoEvent.Type.ViewModeChanged) {
+			if (e.newViewMode == PhotoApplicationModel.ViewMode.Browser) {
+				clearItem.setEnabled(false);
+				scaleSmallImageItem.setEnabled(false);
+			    originalSizeItem.setEnabled(false);
+			    fitWindowItem.setEnabled(false);
+			    fitWidthItem.setEnabled(false);
+			    fitHeightItem.setEnabled(false);
+			} else if (e.newViewMode == PhotoApplicationModel.ViewMode.PhotoViewer) {
+				clearItem.setEnabled(true);
+				scaleSmallImageItem.setEnabled(true);
+			    originalSizeItem.setEnabled(true);
+			    fitWindowItem.setEnabled(true);
+			    fitWidthItem.setEnabled(true);
+			    fitHeightItem.setEnabled(true);
+			}
+		}
 	}
 
 }

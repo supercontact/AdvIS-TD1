@@ -244,6 +244,11 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 			if (currentTarget != null) {
 				currentTarget.setPressed(true);
 				currentTarget.setSelected(!currentTarget.isSelected());
+				if (currentTarget.isSelected()) {
+					model.selectPhoto(currentTarget.photo.getIndex());
+				} else {
+					model.deselectPhoto(currentTarget.photo.getIndex());
+				}
 			}
 		}
 		@Override
@@ -279,6 +284,11 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 					target.setRollover(true);
 					target.setPressed(true);
 					target.setSelected(!target.isSelected());
+					if (target.isSelected()) {
+						model.selectPhoto(target.photo.getIndex());
+					} else {
+						model.deselectPhoto(target.photo.getIndex());
+					}
 				}
 				currentTarget = target;
 			}
@@ -298,11 +308,13 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 	public void photoEventReceived(PhotoEvent e) {
 		if (e.type == PhotoEvent.Type.ViewModeChanged) {
 			switchViewMode(e.oldViewMode, e.newViewMode);
+			
 		} else if (e.type == PhotoEvent.Type.PhotoAdded) {
 			PhotoIcon newIcon = new PhotoIcon(e.photo);
 			photoIcons.add(newIcon);
 			photoIconWall.add(newIcon);
 			updateIconWall();
+			
 		} else if (e.type == PhotoEvent.Type.PhotoRemoved) {
 			PhotoIcon iconRemoved = null;
 			for (int i = 0; i < photoIcons.size(); i++) {

@@ -120,6 +120,12 @@ public class PhotoApplicationModel {
 		}
 		firePhotoEvent(PhotoEvent.CreatePhotoRemovedEvent(this, oldPhoto));
 	}
+	public void deleteSelectedPhotos() {
+		for (AnnotatedPhoto photo : selectedPhotos) {
+			deletePhoto(photo.getIndex());
+		}
+		selectedPhotos.clear();
+	}
 	
 	public void clearPhoto() {
 		clearPhoto(currentViewingIndex);
@@ -132,6 +138,24 @@ public class PhotoApplicationModel {
 		photo.primitives.clear();
 		saveAlbum();
 		firePhotoEvent(PhotoEvent.CreatePhotoAnnotationChangedEvent(this, photo));
+	}
+	
+	public void selectPhoto(int index) {
+		AnnotatedPhoto photo = album.photoList.get(index);
+		if (!selectedPhotos.contains(photo)) {
+			selectedPhotos.add(photo);
+			firePhotoEvent(PhotoEvent.CreatePhotoSelectedEvent(this, photo));
+		}
+		
+	}
+	
+	public void deselectPhoto(int index) {
+		AnnotatedPhoto photo = album.photoList.get(index);
+		if (selectedPhotos.contains(photo)) {
+			selectedPhotos.remove(photo);
+			firePhotoEvent(PhotoEvent.CreatePhotoDeselectedEvent(this, photo));
+		}
+		
 	}
 	
 	public void setAlbumLocation(File url) {

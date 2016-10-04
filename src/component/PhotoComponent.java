@@ -244,7 +244,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	
 	public void fitPhoto() {
-		if (!model.isShowingPhoto()) return;
+		if (model.getViewMode() != PhotoApplicationModel.ViewMode.PhotoViewer || !model.isShowingPhoto()) return;
 		Image img = model.getAnnotatedPhoto().image;
 		JScrollPane scrollPane = (JScrollPane)getParent().getParent();
 		int requiredWidth = img.getWidth(null) + 2 * frameWidth;

@@ -86,15 +86,6 @@ public class PhotoIcon extends JComponent {
 		if (isSelected) {
 			color = new Color(120, 120, 200, 128);
 		}
-		/*if (isPressed) {
-			color = new Color(120, 120, 200, 192);
-		} else if (isSelected && isRollover) {
-			color = new Color(120, 120, 200, 160);
-		} else if (isSelected) {
-			color = new Color(120, 120, 200, 128);
-		} else if (isRollover) {
-			color = new Color(120, 120, 200, 64);
-		}*/
 		
 		graphics.setColor(color);
 		graphics.fillRect(0, 0, getWidth(), getHeight());
@@ -120,8 +111,9 @@ public class PhotoIcon extends JComponent {
 		AffineTransform oldTrans = null;
 		if (isRollover) {
 			oldTrans = g.getTransform();
-			AffineTransform newTrans = AffineTransform.getRotateInstance(rolloverRotate, midx, midy);
-			newTrans.concatenate(oldTrans);
+			AffineTransform selfTrans = AffineTransform.getRotateInstance(rolloverRotate, midx, midy);
+			AffineTransform newTrans = g.getTransform();
+			newTrans.concatenate(selfTrans);
 			g.setTransform(newTrans);
 		}
 		int[] gridx = {
