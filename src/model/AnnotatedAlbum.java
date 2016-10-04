@@ -1,6 +1,9 @@
+package model;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
+
+import util.SerializationControl;
 
 public class AnnotatedAlbum implements Serializable {
 
@@ -11,10 +14,6 @@ public class AnnotatedAlbum implements Serializable {
 	public AnnotatedAlbum() {
 		photoList = new ArrayList<>();
 	}
-
-	public int getSize() {
-		return photoList.size();
-	}
 	
 	public AnnotatedPhoto importNewPhoto(File file) {
 		AnnotatedPhoto newPhoto = new AnnotatedPhoto(file);
@@ -23,25 +22,35 @@ public class AnnotatedAlbum implements Serializable {
 		return newPhoto;
 	}
 	
+	public void removePhoto(int index) {
+		photoList.get(index).setIndex(-1);
+		photoList.remove(index);
+		reindex();
+	}
+	
 	public void loadAllPhotos() {
 		for (AnnotatedPhoto photo : photoList) {
 			photo.loadPhoto();
 		}
 	}
 	
-	public boolean saveAlbum() {
-		return SerializationControl.save(this, GlobalSettings.savedAlbumLocation);
+	public boolean saveAlbum(File url) {
+		return SerializationControl.save(this, url);
 	}
 
-	public static AnnotatedAlbum loadAlbum() {
-		if (GlobalSettings.savedAlbumLocation.exists()) {
-			AnnotatedAlbum album = (AnnotatedAlbum)SerializationControl.load(GlobalSettings.savedAlbumLocation);
-			for (int i = 0; i < album.photoList.size(); i++) {
-				album.photoList.get(i).setIndex(i);
-			}
+	public static AnnotatedAlbum loadAlbum(File url) {
+		if (url.exists()) {
+			AnnotatedAlbum album = (AnnotatedAlbum)SerializationControl.load(url);
+			album.reindex();
 			return album;
 		}
 		return null;
+	}
+	
+	private void reindex() {
+		for (int i = 0; i < photoList.size(); i++) {
+			photoList.get(i).setIndex(i);
+		}
 	}
 	
 }

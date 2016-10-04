@@ -1,3 +1,4 @@
+package component;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -7,6 +8,10 @@ import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 
 import javax.swing.JComponent;
+
+import custom.GlobalSettings;
+import custom.ResourceManager;
+import model.AnnotatedPhoto;
 
 public class PhotoIcon extends JComponent {
 

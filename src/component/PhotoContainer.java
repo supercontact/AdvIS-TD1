@@ -1,3 +1,4 @@
+package component;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -14,19 +15,20 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
-public class PhotoContainer extends JLayeredPane implements MouseMotionListener{
+import custom.ResourceManager;
+import model.AnnotatedPhoto;
+import model.PhotoApplicationModel;
+import model.PhotoEvent;
+import model.PhotoListener;
+
+public class PhotoContainer extends JLayeredPane implements MouseMotionListener, PhotoListener{
 
 	private static final long serialVersionUID = 1L;
 	
-	public enum ViewMode {
-		PhotoViewer,
-		Browser,
-		Split,
-		Hide
-	}
-	
 	public final int controlPanelOpaqueHeight = 100;
 	public final int controlPanelTransparentHeight = 200;
+	
+	public PhotoApplicationModel model;
 	
 	public PhotoComponent mainPhoto;
 	public JPanel photoIconWall;
@@ -39,12 +41,12 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener{
 	
 	private Image background;
 	
-	private ViewMode mode = ViewMode.Hide;
 	private Point mousePos;
 	private FadePanel currentControlPanel;
 	private float controlPanelAlphaMultiplier = 1;
 	
-	public PhotoContainer() {
+	public PhotoContainer(PhotoApplicationModel model) {
+		this.model = model;
 		initialize();
 	}
 	
@@ -63,42 +65,42 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener{
 		photoIconWall.addMouseListener(iconWallHandler);
 		photoIconWall.addMouseMotionListener(iconWallHandler);
 		photoIcons = new ArrayList<>();
-		for (AnnotatedPhoto photo : PhotoApplication.app.album.photoList) {
+		for (AnnotatedPhoto photo : model.album.photoList) {
 			PhotoIcon newIcon = new PhotoIcon(photo);
 			photoIcons.add(newIcon);
 			photoIconWall.add(newIcon);
 		}
+		
+		model.addPhotoListener(this);
+	}
+	
+	private void switchViewMode(PhotoApplicationModel.ViewMode oldMode, PhotoApplicationModel.ViewMode newMode) {
+		
+		// Clean old stuff
+		if (oldMode == PhotoApplicationModel.ViewMode.PhotoViewer) {
+			scrollPane.setViewportView(null);
+			mainPhoto.deinit();
+		} else if (oldMode == PhotoApplicationModel.ViewMode.Browser) {
+			
+		}
+		
+		// Set new stuff
+		if (newMode == PhotoApplicationModel.ViewMode.PhotoViewer) {
+			scrollPane.setWheelScrollingEnabled(false);
+			scrollPane.setViewportView(mainPhoto);
+			mainPhoto.init();
+		} else if (newMode == PhotoApplicationModel.ViewMode.Browser) {
+			scrollPane.setWheelScrollingEnabled(true);
+			scrollPane.setViewportView(photoIconWall);
+		}
+		
+		updateControlPanel();
 	}
 	
 	public void setMainPhotoComponent(PhotoComponent mainPhoto) {
 		this.mainPhoto = mainPhoto;
 		mainPhoto.container = this;
 		mainPhoto.addMouseMotionListener(this);
-	}
-	
-	public void switchViewMode(ViewMode newMode) {
-		if (mode == newMode) return;
-		
-		// Clean old stuff
-		if (mode == ViewMode.PhotoViewer) {
-			scrollPane.setViewportView(null);
-			mainPhoto.deinit();
-		} else if (mode == ViewMode.Browser) {
-			
-		}
-		
-		// Set new stuff
-		if (newMode == ViewMode.PhotoViewer) {
-			scrollPane.setWheelScrollingEnabled(false);
-			scrollPane.setViewportView(mainPhoto);
-			mainPhoto.init();
-		} else if (newMode == ViewMode.Browser) {
-			scrollPane.setWheelScrollingEnabled(true);
-			scrollPane.setViewportView(photoIconWall);
-		}
-		
-		mode = newMode;
-		updateControlPanel();
 	}
 	
 	public void requestControlPanelHiding(float alphaMultiplier) {
@@ -112,7 +114,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener{
 		
 		updateScrollPane();
 		updateControlPanel();
-		if (mode == ViewMode.Browser) {
+		if (model.getViewMode() == PhotoApplicationModel.ViewMode.Browser) {
 			updateIconWall();
 		}
 	}
@@ -142,14 +144,14 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener{
 	
 	private void updateControlPanel() {
 		if (controlPanel == null || controlPanelEditMode == null) return;
-		if (mode != ViewMode.PhotoViewer) {
+		if (model.getViewMode() != PhotoApplicationModel.ViewMode.PhotoViewer) {
 			controlPanel.setVisible(false);
 			controlPanelEditMode.setVisible(false);
 			currentControlPanel = null;
-		} else if (!mainPhoto.isFlipped() && currentControlPanel != controlPanel) {
+		} else if (!model.isFlipped() && currentControlPanel != controlPanel) {
 			controlPanelEditMode.setVisible(false);
 			currentControlPanel = controlPanel;
-		} else if (mainPhoto.isFlipped() && currentControlPanel != controlPanelEditMode) {
+		} else if (model.isFlipped() && currentControlPanel != controlPanelEditMode) {
 			controlPanel.setVisible(false);
 			currentControlPanel = controlPanelEditMode;
 		}
@@ -228,8 +230,8 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener{
 		@Override
 		public void mouseClicked(MouseEvent e) {
 			if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() >= 2 && currentTarget != null) {
-				container.switchViewMode(ViewMode.PhotoViewer);
-				container.mainPhoto.setPhotoIndex(currentTarget.photo.getIndex());
+				container.model.setViewMode(PhotoApplicationModel.ViewMode.PhotoViewer);
+				container.model.setCurrentViewingIndex(currentTarget.photo.getIndex());
 			}
 		}
 		@Override
@@ -283,6 +285,14 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener{
 		@Override
 		public void mouseExited(MouseEvent e) {
 			// Do nothing
+		}
+	}
+
+
+	@Override
+	public void photoEventReceived(PhotoEvent e) {
+		if (e.type == PhotoEvent.Type.ViewModeChanged) {
+			switchViewMode(e.oldViewMode, e.newViewMode);
 		}
 	}
 }

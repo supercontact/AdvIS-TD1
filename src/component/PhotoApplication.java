@@ -1,3 +1,4 @@
+package component;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -28,13 +29,19 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import custom.GlobalSettings;
+import custom.ResourceManager;
+import custom.SavedSettings;
+import model.AnnotatedPhoto;
+import model.PhotoApplicationModel;
+
 public class PhotoApplication extends JFrame {
 
     private static final long serialVersionUID = 1L;
     
     public static PhotoApplication app;
     
-    public AnnotatedAlbum album;
+    public PhotoApplicationModel model;
     
     JLabel status;
     JMenuBar menuBar;
@@ -71,12 +78,9 @@ public class PhotoApplication extends JFrame {
         
         app = this;
         
-        album = AnnotatedAlbum.loadAlbum();
-        if (album == null) {
-        	album = new AnnotatedAlbum();
-        }
-        album.loadAllPhotos();
-        
+        model = new PhotoApplicationModel();
+        model.setAlbumLocation(GlobalSettings.savedAlbumLocation);
+        model.loadAlbum();
         ResourceManager.loadResources();
         loadIcons();
         
@@ -90,8 +94,6 @@ public class PhotoApplication extends JFrame {
         setupToolBar();
         setupMainArea();
         setupControlPanel();
-        
-        //photoComponent.init();
        
         pack();
     }
@@ -132,7 +134,8 @@ public class PhotoApplication extends JFrame {
         );
         deleteItem.addActionListener(
         		event -> {
-        			if (photoComponent.deleteCurrentPhoto()) {
+        			if (model.isShowingPhoto()) {
+        				model.deletePhoto();
         				showStatusText("Photo removed (The original file is still there).");
         			} else {
         				showStatusText("No photo to remove!");
@@ -141,7 +144,8 @@ public class PhotoApplication extends JFrame {
         );
         clearItem.addActionListener(
         		event -> {
-        			if (photoComponent.clearCurrentPhoto()) {
+        			if (model.isShowingPhoto()) {
+        				model.clearPhoto();
         				showStatusText("All annotations and strokes are removed from the photo.");
         			} else {
         				showStatusText("No photo to clean!");
@@ -173,13 +177,13 @@ public class PhotoApplication extends JFrame {
         
         photoItem.addActionListener(
         		event -> {
-        			photoContainer.switchViewMode(PhotoContainer.ViewMode.PhotoViewer);
+        			model.setViewMode(PhotoApplicationModel.ViewMode.PhotoViewer);
         			showStatusText("Switched to photo viewer mode.");
         		}
         );
         browserItem.addActionListener(
         		event -> {
-        			photoContainer.switchViewMode(PhotoContainer.ViewMode.Browser);
+        			model.setViewMode(PhotoApplicationModel.ViewMode.Browser);
         			showStatusText("Switched to browser mode.");
         		}
         );
@@ -236,12 +240,12 @@ public class PhotoApplication extends JFrame {
     }
     
     private void setupMainArea() {
-    	photoContainer = new PhotoContainer();
-        photoComponent = new PhotoComponent();
+    	photoContainer = new PhotoContainer(model);
+        photoComponent = new PhotoComponent(model);
     	add(photoContainer, BorderLayout.CENTER);
         photoContainer.setMainPhotoComponent(photoComponent);
         
-        photoContainer.switchViewMode(PhotoContainer.ViewMode.Browser);
+        model.setViewMode(PhotoApplicationModel.ViewMode.Browser);
     	
     	status = new JLabel();
         add(status, BorderLayout.SOUTH);
@@ -269,12 +273,12 @@ public class PhotoApplication extends JFrame {
         prev.setIcon(prevIcon);
         prev.setMargin(normalInsets);
         prev.addActionListener(
-        		event -> photoComponent.prevPhoto()
+        		event -> model.prevPhoto()
         );
         next.setIcon(nextIcon);
         next.setMargin(normalInsets);
         next.addActionListener(
-        		event -> photoComponent.nextPhoto()
+        		event -> model.nextPhoto()
         );
         
         toggleStroke = new JToggleButton();
@@ -410,7 +414,7 @@ public class PhotoApplication extends JFrame {
 			return;
 		}
 		File[] files = fileChooser.getSelectedFiles();
-		photoComponent.addPhotos(files);
+		model.addPhotos(files);
 		SavedSettings.settings.defaultFileLocation = files[0].getParentFile();
 		SavedSettings.saveSettings();
 		showStatusText(files.length + " photo(s) are selected. Showing the first photo.");

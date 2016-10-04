@@ -1,3 +1,4 @@
+package component;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -24,7 +25,6 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
-import java.io.File;
 import java.util.List;
 
 import javax.swing.JComponent;
@@ -32,7 +32,13 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-public class PhotoComponent extends JComponent implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener, ActionListener {
+import custom.ResourceManager;
+import model.AnnotatedPhoto;
+import model.PhotoApplicationModel;
+import model.PhotoEvent;
+import model.PhotoListener;
+
+public class PhotoComponent extends JComponent implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener, ActionListener, PhotoListener {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -74,7 +80,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private Image errorImage;
 	
 	// Model
-	private PhotoBrowserModel model;
+	private PhotoApplicationModel model;
 	
 	// Internal variables
 	private boolean initiated = false;
@@ -97,9 +103,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	private long lastSaveTime = 0;
 	
 
-	public PhotoComponent() {
-		model = new PhotoBrowserModel();
-		//model.loadAlbum();
+	public PhotoComponent(PhotoApplicationModel model) {
+		this.model = model;
 		
 		frame = ResourceManager.frameImage;
 		errorImage = ResourceManager.errorImage;
@@ -113,6 +118,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		addMouseMotionListener(this);
 		addMouseWheelListener(this);
 		addKeyListener(this);
+		model.addPhotoListener(this);
 		timer = new Timer(1000 / fps, this);
 		timer.setInitialDelay(10);
 		timer.start(); 
@@ -128,13 +134,14 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		removeMouseMotionListener(this);
 		removeMouseWheelListener(this);
 		removeKeyListener(this);
+		model.removePhotoListener(this);
 		timer.stop();
 		
 		initiated = false;
 	}
 	
 	public void reset() {
-		model.flipped = false;
+		model.setFlipped(false);
 		isEditingText = false;
 		currentAnnotation = null;
 		if (model.isShowingPhoto() && model.getAnnotatedPhoto().image == null) {
@@ -146,65 +153,63 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		repaint();
 	}
 	
-	public boolean saveAlbum() {
+	/*public boolean saveAlbum() {
 		changed = false;
 		return model.saveAlbum();
-	}
+	}*/
 	
-	public void addPhotos(File[] url) {
+	/*public void addPhotos(File[] url) {
 		model.addPhotos(url);
 		saveAlbum();
 		requestFocusInWindow();
 		reset();
-	}
+	}*/
 	
-	public boolean deleteCurrentPhoto() {
-		if (model.deletePhoto()) {
+	/*public void deleteCurrentPhoto() {
+		if (model.isShowingPhoto()) {
+			model.deletePhoto();
 			saveAlbum();
 			reset();
-			return true;
 		}
-		return false;
-	}
+	}*/
 	
-	public boolean clearCurrentPhoto() {
-		if (model.clearPhoto()) {
+	/*public void clearCurrentPhoto() {
+		if (model.isShowingPhoto()) {
+			model.clearPhoto();
 			model.saveAlbum();
 			repaint();
-			return true;
 		}
-		return false;
-	}
+	}*/
 	
-	public void setPhotoIndex(int index) {
+	/*public void setPhotoIndex(int index) {
 		model.jumpTo(index);
 		reset();
 		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
-	}
-	public int getPhotoIndex() {
+	}*/
+	/*public int getPhotoIndex() {
 		return model.currentViewingIndex;
-	}
+	}*/
 	
-	public int getPhotoCount() {
+	/*public int getPhotoCount() {
 		return model.getPhotoCount();
-	}
+	}*/
 	
-	public void nextPhoto() {
+	/*public void nextPhoto() {
 		model.nextPhoto();
 		reset();
 		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
-	}
+	}*/
 	
-	public void prevPhoto() {
+	/*public void prevPhoto() {
 		model.prevPhoto();
 		reset();
 		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
-	}
+	}*/
 	
 	public void flipPhoto() {
 		if (!isLocked) {
 			isEditingText = false;
-			if (!model.flipped) {
+			if (!model.isFlipped()) {
 				isFlippingToBack = true;
 			} else {
 				isFlippingToFront = true;
@@ -213,9 +218,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		}
 	}
 	
-	public boolean isFlipped() {
+	/*public boolean isFlipped() {
 		return model.flipped;
-	}
+	}*/
 	
 	public void scalePhoto(int delta, Point pivot) {
 		Rectangle rect = calculateImageRectWithFrame();
@@ -376,11 +381,11 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		
 		if (!initiated) return;
-		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.isShowingPhoto()) {
+		if (model.isShowingPhoto()) {
 			Shape oldClip = g.getClip();
 			g.setClip(calculateImageRect().intersection((Rectangle)oldClip));
 			
-			if (!model.flipped) {
+			if (!model.isFlipped()) {
 				paintPhoto(graphics);
 				if (!model.getAnnotatedPhoto().imageLoaded) {
 					paintPhotoPath(graphics);
@@ -443,7 +448,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		Stroke oldStroke = g.getStroke();
 	    
 		List<AnnotatedPhoto.StrokeMark> strokes = model.getAnnotatedPhoto().strokes;
-		if (model.flipped) {
+		if (model.isFlipped()) {
 			for (AnnotatedPhoto.StrokeMark stroke : strokes) {
 				float realWidth = (float)(stroke.width * imageScaleY);
 				
@@ -470,7 +475,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		Stroke oldStroke = g.getStroke();
 	    
 		List<AnnotatedPhoto.PrimitiveMark> primitives = model.getAnnotatedPhoto().primitives;
-		if (model.flipped) {
+		if (model.isFlipped()) {
 			for (AnnotatedPhoto.PrimitiveMark primitive : primitives) {
 				float realWidth = (float)(primitive.lineWidth * imageScaleY);
 				
@@ -505,7 +510,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		Rectangle rect = calculateImageRect();
 		
 		List<AnnotatedPhoto.Annotation> annotations = model.getAnnotatedPhoto().annotations;
-		if (model.flipped) {
+		if (model.isFlipped()) {
 			for (AnnotatedPhoto.Annotation annotation : annotations) {
 				Font font = new Font(annotation.font, Font.PLAIN, (int)(annotation.size * imageScaleY));
 				g.setFont(font);
@@ -649,8 +654,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	@Override
 	public void mouseClicked(MouseEvent e) {
 		requestFocusInWindow();
-		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && model.isShowingPhoto() && !isLocked) {
-			if (e.getClickCount() == 1 && model.flipped) {
+		if (model.isShowingPhoto() && !isLocked) {
+			if (e.getClickCount() == 1 && model.isFlipped()) {
 				Point imagePoint = componentToImageCoordinates(e.getPoint());
 				isEditingText = true;
 				currentAnnotation = null;
@@ -665,7 +670,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	@Override
 	public void mousePressed(MouseEvent e) {
 		prevMouseDragPos = e.getPoint();
-		if (calculateImageRect().contains(prevMouseDragPos) && model.flipped && !isLocked) {
+		if (calculateImageRect().contains(prevMouseDragPos) && model.isFlipped() && !isLocked) {
 			canStartDrawing = true;
 		}
 		container.requestControlPanelHiding(controlPanelAlphaWhenDrawing);
@@ -679,8 +684,8 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 	}
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		if (model.mode == PhotoBrowserModel.ViewMode.PhotoViewer && !isLocked) {
-			if (canStartDrawing && model.flipped && SwingUtilities.isLeftMouseButton(e)) {
+		if (!isLocked) {
+			if (canStartDrawing && model.isFlipped() && SwingUtilities.isLeftMouseButton(e)) {
 				if (isCreatingPrimitive) {
 					drawPrimitiveTo(e.getPoint());
 				} else {
@@ -699,9 +704,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		} else {
 			// Navigating
 			if (e.getWheelRotation() > 0) {
-				nextPhoto();
+				model.nextPhoto();
 			} else {
-				prevPhoto();
+				model.prevPhoto();
 			}
 		}
 	}
@@ -737,9 +742,9 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		if (!isEditingText) {
 			// Jump to another photo in the album
 			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-				nextPhoto();
+				model.nextPhoto();
 			} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-				prevPhoto();
+				model.prevPhoto();
 			}
 		} else {
 			// Navigate the pointer in the current editing annotation
@@ -751,7 +756,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				repaint();
 			}
 		}
-		if (model.flipped && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_Z) {
+		if (model.isFlipped() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_Z) {
 			undo();
 		}
 		e.consume();
@@ -772,7 +777,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		if (t - lastSaveTime > savePeriod) {
 			lastSaveTime = t;
 			if (changed) {
-				saveAlbum();
+				model.saveAlbum();
 			}
 		}
 		
@@ -782,7 +787,7 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				flippingAnimationProgress += 1000 / fps;
 				flippingAnimationProgress = Math.min(flippingAnimationProgress, flippingAnimationTime);
 			}     
-			model.flipped = (2 * flippingAnimationProgress < flippingAnimationTime) ? isFlippingToFront : isFlippingToBack;
+			model.setFlipped((2 * flippingAnimationProgress < flippingAnimationTime) ? isFlippingToFront : isFlippingToBack);
 			double scale = Math.abs(Math.cos(Math.PI * flippingAnimationProgress / flippingAnimationTime));
 			imageScaleXMultiplier = scale;
 			container.requestControlPanelHiding((float)scale);
@@ -794,6 +799,18 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 				isLocked = false;
 				imageScaleXMultiplier = 1;
 			}
+		}
+	}
+
+	// PhotoListener: React when the model is changed.
+	@Override
+	public void photoEventReceived(PhotoEvent e) {
+		if (e.type == PhotoEvent.Type.ViewIndexChanged) {
+			reset();
+		} else if (e.type == PhotoEvent.Type.PhotoAnnotationChanged) {
+			repaint();
+		} else if (e.type == PhotoEvent.Type.AlbumSaved) {
+			changed = false;
 		}
 	}
 }

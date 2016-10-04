@@ -1,6 +1,9 @@
+package custom;
 import java.io.File;
 import java.io.Serializable;
 import java.nio.file.FileSystems;
+
+import util.SerializationControl;
 
 public class SavedSettings implements Serializable {
 

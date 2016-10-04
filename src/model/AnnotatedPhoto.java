@@ -1,3 +1,4 @@
+package model;
 import java.awt.Color;
 import java.awt.Image;
 import java.awt.Point;
@@ -37,18 +38,21 @@ public class AnnotatedPhoto implements Serializable {
 	
 	public boolean loadPhoto() {
 		try {
-			image = ImageIO.read(imageURL);
-			int w = image.getWidth(null);
-			int h = image.getHeight(null);
-			int l = Math.min(w, h);
-			BufferedImage squareImage = ((BufferedImage)image).getSubimage((w - l) / 2, (h - l) / 2, l, l);
-			thumbnail = squareImage.getScaledInstance(GlobalSettings.thumbnailSize, GlobalSettings.thumbnailSize, Image.SCALE_SMOOTH);
+			image = ImageIO.read(imageURL);		
 			
 			imageLoaded = true;
 			return true;
 		} catch (IOException e) {
 			return false;
 		}
+	}
+	
+	public void generateThumbnail(int size) {
+		int w = image.getWidth(null);
+		int h = image.getHeight(null);
+		int l = Math.min(w, h);
+		BufferedImage squareImage = ((BufferedImage)image).getSubimage((w - l) / 2, (h - l) / 2, l, l);
+		thumbnail = squareImage.getScaledInstance(size, size, Image.SCALE_SMOOTH);
 	}
 	
 	public int getIndex() {
