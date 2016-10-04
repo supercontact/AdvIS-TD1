@@ -99,24 +99,38 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 
 	public PhotoComponent() {
 		model = new PhotoBrowserModel();
-		model.loadAlbum();
+		//model.loadAlbum();
 		
 		frame = ResourceManager.frameImage;
 		errorImage = ResourceManager.errorImage;
+		setFocusable(true);
 	}
 	
 	public void init() {
+		if (initiated) return;
+		
 		addMouseListener(this);
 		addMouseMotionListener(this);
 		addMouseWheelListener(this);
 		addKeyListener(this);
-		setFocusable(true);
 		timer = new Timer(1000 / fps, this);
 		timer.setInitialDelay(10);
 		timer.start(); 
 		
 		reset();
 		initiated = true;
+	}
+	
+	public void deinit() {
+		if (!initiated) return;
+		
+		removeMouseListener(this);
+		removeMouseMotionListener(this);
+		removeMouseWheelListener(this);
+		removeKeyListener(this);
+		timer.stop();
+		
+		initiated = false;
 	}
 	
 	public void reset() {
@@ -162,6 +176,11 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		return false;
 	}
 	
+	public void setPhotoIndex(int index) {
+		model.jumpTo(index);
+		reset();
+		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
+	}
 	public int getPhotoIndex() {
 		return model.currentViewingIndex;
 	}

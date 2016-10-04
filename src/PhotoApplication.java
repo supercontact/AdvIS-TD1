@@ -34,6 +34,8 @@ public class PhotoApplication extends JFrame {
     
     public static PhotoApplication app;
     
+    public AnnotatedAlbum album;
+    
     JLabel status;
     JMenuBar menuBar;
     JMenu fileMenu, viewMenu;
@@ -69,6 +71,12 @@ public class PhotoApplication extends JFrame {
         
         app = this;
         
+        album = AnnotatedAlbum.loadAlbum();
+        if (album == null) {
+        	album = new AnnotatedAlbum();
+        }
+        album.loadAllPhotos();
+        
         ResourceManager.loadResources();
         loadIcons();
         
@@ -83,7 +91,7 @@ public class PhotoApplication extends JFrame {
         setupMainArea();
         setupControlPanel();
         
-        photoComponent.init();
+        //photoComponent.init();
        
         pack();
     }
@@ -164,10 +172,16 @@ public class PhotoApplication extends JFrame {
         viewMenu.add(fitHeightItem);
         
         photoItem.addActionListener(
-        		event -> showStatusText("Switched to photo viewer mode.")
+        		event -> {
+        			photoContainer.switchViewMode(PhotoContainer.ViewMode.PhotoViewer);
+        			showStatusText("Switched to photo viewer mode.");
+        		}
         );
         browserItem.addActionListener(
-        		event -> showStatusText("Switched to browser mode (Not yet supported).")
+        		event -> {
+        			photoContainer.switchViewMode(PhotoContainer.ViewMode.Browser);
+        			showStatusText("Switched to browser mode.");
+        		}
         );
         splitItem.addActionListener(
         		event -> showStatusText("Switched to split mode (Not yet supported).")
@@ -226,6 +240,8 @@ public class PhotoApplication extends JFrame {
         photoComponent = new PhotoComponent();
     	add(photoContainer, BorderLayout.CENTER);
         photoContainer.setMainPhotoComponent(photoComponent);
+        
+        photoContainer.switchViewMode(PhotoContainer.ViewMode.Browser);
     	
     	status = new JLabel();
         add(status, BorderLayout.SOUTH);
@@ -356,7 +372,7 @@ public class PhotoApplication extends JFrame {
         			}
         		}
         );
-        colorImage(photoComponent.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
+        colorImage(new Color(0x19, 0x2C, 0x3C), originalColorImage ,(BufferedImage)colorIcon.getImage());
         
         setFont.addActionListener(
         		event -> photoComponent.currentFontName = (String)setFont.getSelectedItem()

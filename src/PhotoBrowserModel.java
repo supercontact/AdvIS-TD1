@@ -15,7 +15,10 @@ public class PhotoBrowserModel {
 	
 	
 	public PhotoBrowserModel() {
-		album = new AnnotatedAlbum();
+		album = PhotoApplication.app.album;
+		if (album.photoList.size() > 0) {
+			currentViewingIndex = 0;
+		}
 	}
 	
 	public boolean isShowingPhoto() {
@@ -26,9 +29,7 @@ public class PhotoBrowserModel {
 		currentViewingIndex = album.photoList.size();
 		flipped = false;
 		for (int i = 0; i < url.length; i++) {
-			AnnotatedPhoto newPhoto = new AnnotatedPhoto(url[i]);
-			album.photoList.add(newPhoto);
-			newPhoto.loadPhoto();
+			album.importNewPhoto(url[i]).loadPhoto();
 		}
 	}
 	
@@ -78,24 +79,23 @@ public class PhotoBrowserModel {
 		}
 	}
 	
-	public boolean saveAlbum() {
-		return SerializationControl.save(album, GlobalSettings.savedAlbumLocation);
-	}
-
-	public boolean loadAlbum() {
-		if (GlobalSettings.savedAlbumLocation.exists()) {
-			AnnotatedAlbum loadedAlbum = (AnnotatedAlbum)SerializationControl.load(GlobalSettings.savedAlbumLocation);
-			if (loadedAlbum != null) {
-				album = loadedAlbum;
-				if (album.photoList.size() > 0) {
-					currentViewingIndex = 0;
-				}
-				for (AnnotatedPhoto photo : album.photoList) {
-					photo.loadPhoto();
-				}
-				return true;
-			}
+	public void jumpTo(int index) {
+		if (index < getPhotoCount()) {
+			currentViewingIndex = index;
 		}
-		return false;
+	}
+	
+	public boolean saveAlbum() {
+		return album.saveAlbum();
+	}
+	
+	public boolean loadAlbum() {
+		AnnotatedAlbum loadedAlbum = AnnotatedAlbum.loadAlbum();
+		if (loadedAlbum == null) return false;
+		album = loadedAlbum;
+		if (album.photoList.size() > 0) {
+			currentViewingIndex = 0;
+		}
+		return true;
 	}
 }

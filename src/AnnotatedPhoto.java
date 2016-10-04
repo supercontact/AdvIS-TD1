@@ -1,6 +1,7 @@
 import java.awt.Color;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -24,6 +25,8 @@ public class AnnotatedPhoto implements Serializable {
 	transient public Image thumbnail;
 	transient public boolean imageLoaded = false;
 	
+	transient private int index;
+	
 	public AnnotatedPhoto(File url) {
 		imageURL = url;
 		tags = new ArrayList<>();
@@ -35,12 +38,24 @@ public class AnnotatedPhoto implements Serializable {
 	public boolean loadPhoto() {
 		try {
 			image = ImageIO.read(imageURL);
-			thumbnail = image.getScaledInstance(GlobalSettings.thumbnailSize, GlobalSettings.thumbnailSize, Image.SCALE_SMOOTH);
+			int w = image.getWidth(null);
+			int h = image.getHeight(null);
+			int l = Math.min(w, h);
+			BufferedImage squareImage = ((BufferedImage)image).getSubimage((w - l) / 2, (h - l) / 2, l, l);
+			thumbnail = squareImage.getScaledInstance(GlobalSettings.thumbnailSize, GlobalSettings.thumbnailSize, Image.SCALE_SMOOTH);
+			
 			imageLoaded = true;
 			return true;
 		} catch (IOException e) {
 			return false;
 		}
+	}
+	
+	public int getIndex() {
+		return index;
+	}
+	protected void setIndex(int index) {
+		this.index = index;
 	}
 	
 	public Annotation createAnnotation() {

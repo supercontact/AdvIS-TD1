@@ -1,4 +1,5 @@
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -11,6 +12,7 @@ public class ResourceManager {
 	public static BufferedImage backgroundImage;
 	public static BufferedImage frameImage;
 	public static BufferedImage errorImage;
+	public static Image errorImageThumbnail;
 	public static BufferedImage prevIcon;
 	public static BufferedImage nextIcon;
 	public static BufferedImage lineIcon;
@@ -39,6 +41,7 @@ public class ResourceManager {
 			backgroundImage = ImageIO.read(backgroundImageLocation);
 			frameImage = ImageIO.read(frameImageLocation);
 			errorImage = ImageIO.read(errorImageLocation);
+			errorImageThumbnail = errorImage.getScaledInstance(GlobalSettings.thumbnailSize, GlobalSettings.thumbnailSize, Image.SCALE_SMOOTH);
 			prevIcon = ImageIO.read(prevIconLocation);
 			nextIcon = ImageIO.read(nextIconLocation);
 			lineIcon = ImageIO.read(lineIconLocation);
