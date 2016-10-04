@@ -3,14 +3,25 @@ Feature lists:
 Can load multiple photos.
 Files showed in the fileChooser are filtered by extensions, limit only to image files.
 Add a photo frame to the photo.
+Show a background image that stays fixed when scrolling.
+
+In browse mode:
+Show a table of photo thumbnails.
+Resizing will rearrange icons.
+Drag to select/deselect all touched photos.
+Double click on a photo icon to enter photo viewer mode showing that photo.
+Hover / Pressed / Selected states of photo icons show different appearances.
+Select a group of photos and delete them all at once.
+In this mode, some menu items are disabled.
+
+In photo viewer mode:
 Navigate by left/right keys or the two buttons (which appears when moving the cursor to the bottom of the screen).
 Enable scrolling if image is too big.
-Show a background image that stays fixed when scrolling.
 Drag (left/right mouse key in view mode, right mouse key in flipped mode) to scroll.
 Mouse wheel to navigate in album.
 Hold ctrl and use mouse wheel to scale photo. The position where the mouse is pointing will stay fixed.
 Resizing will be handled correctly.
-4 Scale modes available in menu (plus one option to scale up). Will persist when resizing unless mouse wheel scaling is used.
+4 Scale modes become available in menu (plus one option to scale up). Will persist when resizing unless mouse wheel scaling is used.
 Double click to flip photo (+animation).
 
 In flipped state:
@@ -32,5 +43,5 @@ Ctrl + z to undo (remove last created element).
 
 Save the path in fileChooser where images were previously loaded.
 Save the album (all imported images and annotations / strokes) automatically when importing, and every 5 seconds if changes are made.
-Automatically load the saved album when starting the application
+Automatically load the saved album when starting the application.
 If external photo is moved or deleted, show a replacement image along with the original path to the missing photo.
