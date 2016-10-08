@@ -153,59 +153,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 		repaint();
 	}
 	
-	/*public boolean saveAlbum() {
-		changed = false;
-		return model.saveAlbum();
-	}*/
-	
-	/*public void addPhotos(File[] url) {
-		model.addPhotos(url);
-		saveAlbum();
-		requestFocusInWindow();
-		reset();
-	}*/
-	
-	/*public void deleteCurrentPhoto() {
-		if (model.isShowingPhoto()) {
-			model.deletePhoto();
-			saveAlbum();
-			reset();
-		}
-	}*/
-	
-	/*public void clearCurrentPhoto() {
-		if (model.isShowingPhoto()) {
-			model.clearPhoto();
-			model.saveAlbum();
-			repaint();
-		}
-	}*/
-	
-	/*public void setPhotoIndex(int index) {
-		model.jumpTo(index);
-		reset();
-		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
-	}*/
-	/*public int getPhotoIndex() {
-		return model.currentViewingIndex;
-	}*/
-	
-	/*public int getPhotoCount() {
-		return model.getPhotoCount();
-	}*/
-	
-	/*public void nextPhoto() {
-		model.nextPhoto();
-		reset();
-		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
-	}*/
-	
-	/*public void prevPhoto() {
-		model.prevPhoto();
-		reset();
-		PhotoApplication.showStatusText("Viewing photo " + (getPhotoIndex() + 1) + "/" + getPhotoCount());
-	}*/
-	
 	public void flipPhoto() {
 		if (!isLocked) {
 			isEditingText = false;
@@ -217,10 +164,6 @@ public class PhotoComponent extends JComponent implements MouseListener, MouseMo
 			isLocked = true;
 		}
 	}
-	
-	/*public boolean isFlipped() {
-		return model.flipped;
-	}*/
 	
 	public void scalePhoto(int delta, Point pivot) {
 		Rectangle rect = calculateImageRectWithFrame();

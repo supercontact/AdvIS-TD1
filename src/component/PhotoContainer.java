@@ -21,7 +21,7 @@ import model.PhotoApplicationModel;
 import model.PhotoEvent;
 import model.PhotoListener;
 
-public class PhotoContainer extends JLayeredPane implements MouseMotionListener, PhotoListener{
+public class PhotoContainer extends JLayeredPane implements MouseMotionListener, PhotoListener {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -169,6 +169,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 
 	private void updateControlPanelFade() {
 		if (currentControlPanel == null) return;
+		if (mousePos == null) return;
 		int height = getHeight() - mousePos.y;
 		if (height <= controlPanelOpaqueHeight) {
 			currentControlPanel.setAlpha(controlPanelAlphaMultiplier);
