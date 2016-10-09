@@ -2,21 +2,21 @@ package component;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.RenderingHints;
-import java.awt.geom.AffineTransform;
-
-import javax.swing.JComponent;
+import java.awt.Point;
 
 import custom.GlobalSettings;
 import custom.ResourceManager;
 import model.AnnotatedPhoto;
+import scene.ImageBorderNode;
+import scene.ImageNode;
+import scene.Node;
+import scene.RectangleNode;
 
-public class PhotoIcon extends JComponent {
+public class PhotoIcon extends GraphicalComponent {
 
 	private static final long serialVersionUID = 1L;
 	
+	// Constants
 	public final int thumbnailSize = GlobalSettings.thumbnailSize;
 	public final int frameWidth = 20;
 	public final double margin = 0.05;
@@ -24,17 +24,20 @@ public class PhotoIcon extends JComponent {
 	public final double rolloverRotate = 0.03;
 	public final double pressedScale = 1.05;
 	
+	// Links
 	public AnnotatedPhoto photo;
 	public PhotoContainer container;
 	
+	// Graphical nodes
+	private ImageNode photoNode;
+	private ImageBorderNode frameNode;
+	private Node photoContainerNode;
+	private RectangleNode selectionBoxNode;
+	
+	// Internal variables
 	private boolean isRollover = false;
 	private boolean isPressed = false;
 	private boolean isSelected = false;
-	private double imageScaleX = 1;
-	private double imageScaleY = 1;
-	
-	
-	private Image frame;
 	
 	
 	public PhotoIcon(AnnotatedPhoto photo) {
@@ -46,7 +49,29 @@ public class PhotoIcon extends JComponent {
 				(int)((thumbnailSize + 2 * frameWidth) * (1 + margin)), 
 				(int)((thumbnailSize + 2 * frameWidth) * (1 + margin))));
 		
-		frame = ResourceManager.frameImage;
+		initializeGraphicalNodes();
+	}
+	
+	private void initializeGraphicalNodes() {
+		graphicalNode = new Node();
+		photoContainerNode = new Node();
+		photoNode = new ImageNode();
+		photoNode.image = photo.thumbnail;
+		photoNode.setPosition(new Point(- thumbnailSize / 2, - thumbnailSize / 2));
+		frameNode = new ImageBorderNode(
+				ResourceManager.frameImage, 
+				thumbnailSize + 2 * frameWidth, 
+				thumbnailSize + 2 * frameWidth, 
+				frameWidth);
+		frameNode.setPosition(new Point(- thumbnailSize / 2 - frameWidth, - thumbnailSize / 2 - frameWidth));
+		selectionBoxNode = new RectangleNode(new Point(0, 0), new Point(0, 0));
+		selectionBoxNode.fillColor = new Color(120, 120, 200, 128);
+		selectionBoxNode.drawBorder = false;
+		
+		graphicalNode.addChild(selectionBoxNode);
+		graphicalNode.addChild(photoContainerNode);
+		photoContainerNode.addChild(photoNode);
+		photoContainerNode.addChild(frameNode);
 	}
 	
 	public boolean isRollover() {
@@ -73,75 +98,23 @@ public class PhotoIcon extends JComponent {
 
 	@Override
 	public void paintComponent(Graphics graphics) {
-		Graphics2D g = (Graphics2D)graphics;
-		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		
-		paintSelection(graphics);
-        paintPhotoAndFrame(graphics);
+		updateGraphicalNodes();
+		super.paintComponent(graphics);
 	}
 	
-	private void paintSelection(Graphics graphics) {
-		Color color = new Color(0, 0, 0, 0);
-		if (isSelected) {
-			color = new Color(120, 120, 200, 128);
-		}
-		
-		graphics.setColor(color);
-		graphics.fillRect(0, 0, getWidth(), getHeight());
-	}
-	
-	private void paintPhotoAndFrame(Graphics graphics) {
-		Graphics2D g = (Graphics2D) graphics;
+	private void updateGraphicalNodes() {
+		photoContainerNode.setPosition(getWidth() / 2, getHeight() / 2);
 		if (isPressed) {
-			imageScaleX = pressedScale;
-			imageScaleY = pressedScale;
+			photoContainerNode.setScale(pressedScale, pressedScale);
+			photoContainerNode.setRotation(0);
 		} else if (isRollover) {
-			imageScaleX = rolloverScale;
-			imageScaleY = rolloverScale;
+			photoContainerNode.setScale(rolloverScale, rolloverScale);
+			photoContainerNode.setRotation(rolloverRotate);
 		} else {
-			imageScaleX = 1;
-			imageScaleY = 1;
+			photoContainerNode.setScale(1, 1);
+			photoContainerNode.setRotation(0);
 		}
-		
-		Dimension size = getSize();
-		int midx = size.width / 2;
-		int midy = size.height / 2;
-		
-		AffineTransform oldTrans = null;
-		if (isRollover) {
-			oldTrans = g.getTransform();
-			AffineTransform selfTrans = AffineTransform.getRotateInstance(rolloverRotate, midx, midy);
-			AffineTransform newTrans = g.getTransform();
-			newTrans.concatenate(selfTrans);
-			g.setTransform(newTrans);
-		}
-		int[] gridx = {
-				midx - (int)((thumbnailSize / 2 + frameWidth) * imageScaleX), 
-				midx - (int)(thumbnailSize / 2 * imageScaleX), 
-				midx + (int)((thumbnailSize + 1) / 2 * imageScaleX), 
-				midx + (int)(((thumbnailSize + 1) / 2 + frameWidth) * imageScaleX)};
-		int[] gridy = {
-				midy - (int)((thumbnailSize / 2 + frameWidth) * imageScaleY), 
-				midy - (int)(thumbnailSize / 2 * imageScaleY), 
-				midy + (int)((thumbnailSize + 1) / 2 * imageScaleY), 
-				midy + (int)(((thumbnailSize + 1) / 2 + frameWidth) * imageScaleY)};
-		int[] fx = new int[] {0, frameWidth, 2 * frameWidth, 3 * frameWidth};
-		int[] fy = new int[] {0, frameWidth, 2 * frameWidth, 3 * frameWidth};
-		
-		graphics.drawImage(photo.thumbnail, gridx[1], gridy[1], gridx[2] - gridx[1], gridy[2] - gridy[1], null);
-		
-		graphics.drawImage(frame, gridx[0], gridy[0], gridx[1], gridy[1], fx[0], fy[0], fx[1], fy[1], null);
-		graphics.drawImage(frame, gridx[1], gridy[0], gridx[2], gridy[1], fx[1], fy[0], fx[2], fy[1], null);
-		graphics.drawImage(frame, gridx[2], gridy[0], gridx[3], gridy[1], fx[2], fy[0], fx[3], fy[1], null);
-		graphics.drawImage(frame, gridx[2], gridy[1], gridx[3], gridy[2], fx[2], fy[1], fx[3], fy[2], null);
-		graphics.drawImage(frame, gridx[2], gridy[2], gridx[3], gridy[3], fx[2], fy[2], fx[3], fy[3], null);
-		graphics.drawImage(frame, gridx[1], gridy[2], gridx[2], gridy[3], fx[1], fy[2], fx[2], fy[3], null);
-		graphics.drawImage(frame, gridx[0], gridy[2], gridx[1], gridy[3], fx[0], fy[2], fx[1], fy[3], null);
-		graphics.drawImage(frame, gridx[0], gridy[1], gridx[1], gridy[2], fx[0], fy[1], fx[1], fy[2], null);
-		
-		if (isRollover) {
-			g.setTransform(oldTrans);
-		}
+		selectionBoxNode.isVisible = isSelected;
+		selectionBoxNode.p2 = new Point(getWidth(), getHeight());
 	}
 }

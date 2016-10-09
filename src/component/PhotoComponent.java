@@ -123,7 +123,9 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 		frameNode = new ImageBorderNode(ResourceManager.frameImage, 0, 0, frameWidth);
 		frameNode.setPosition(new Point(-frameWidth, -frameWidth));
 		errorPathNode = new TextNode();
+		errorPathNode.textColor = Color.BLACK;
 		annotationNode = new Node();
+		
 		graphicalNode.addChild(photoNode);
 		graphicalNode.addChild(photoBackNode);
 		graphicalNode.addChild(frameNode);
@@ -416,7 +418,8 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 			frameNode.width = w + 2 * frameWidth;
 			frameNode.height = h + 2 * frameWidth;
 			errorPathNode.setPosition(new Point(10, rect.height - 10));
-			errorPathNode.isVisible = !model.getAnnotatedPhoto().imageLoaded;
+			errorPathNode.isVisible = !model.getAnnotatedPhoto().imageLoaded && !model.isFlipped();
+			errorPathNode.text = model.getAnnotatedPhoto().imageURL.toString();
 			annotationNode.removeAllChild();
 			annotationNode.addChild(model.getAnnotatedPhoto().annotation);
 			annotationNode.clip = new Rectangle(0, 0, w, h);
