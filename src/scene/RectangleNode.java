@@ -5,18 +5,17 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.RoundRectangle2D;
 
-public class RectangleNode extends ShapeNode {
+public class RectangleNode extends PrimitiveNode {
 	
-	public Point p1, p2;
+	private static final long serialVersionUID = 1L;
+	
 	public int roundCornerRadius = 0;
 	
 	public RectangleNode(Point p1, Point p2) {
-		this.p1 = p1;
-		this.p2 = p2;
+		super(p1, p2);
 	}
 	public RectangleNode(Point p1, Point p2, int roundCornerRadius) {
-		this.p1 = p1;
-		this.p2 = p2;
+		super(p1, p2);
 		this.roundCornerRadius = roundCornerRadius;
 	}
 	

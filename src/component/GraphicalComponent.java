@@ -36,6 +36,7 @@ public class GraphicalComponent extends JComponent {
 		setPreferredSize(new Dimension(bounds.width, bounds.height));
 	}
 	
+	// For debug use
 	public void showBounds() {
 		showBounds = true;
 		repaint();

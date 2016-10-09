@@ -1,4 +1,5 @@
 package model;
+import java.awt.Image;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,6 +22,8 @@ public class PhotoApplicationModel {
 	private boolean flipped = false;
 	
 	private File albumLocation;
+	private Image errorImage;
+	private Image errorImageThumbnail;
 	private int thumbnailSize = 256;
 	
 	private ArrayList<PhotoListener> listeners;
@@ -133,9 +136,7 @@ public class PhotoApplicationModel {
 	public void clearPhoto(int index) {
 		if (index < 0) return;
 		AnnotatedPhoto photo = album.photoList.get(index);
-		photo.strokes.clear();
-		photo.annotations.clear();
-		photo.primitives.clear();
+		photo.clear();
 		saveAlbum();
 		firePhotoEvent(PhotoEvent.CreatePhotoAnnotationChangedEvent(this, photo));
 	}
@@ -161,7 +162,12 @@ public class PhotoApplicationModel {
 	public void setAlbumLocation(File url) {
 		albumLocation = url;
 	}
-	
+	public void setErrorImage(Image image) {
+		errorImage = image;
+	}
+	public void setErrorImageThumbnail(Image image) {
+		errorImageThumbnail = image;
+	}
 	public void setThumbnailSize(int size) {
 		thumbnailSize = size;
 	}
@@ -182,8 +188,15 @@ public class PhotoApplicationModel {
 		if (album.photoList.size() > 0) {
 			currentViewingIndex = 0;
 		}
+		
 		album.loadAllPhotos();
 		album.generateAllThumbnails(thumbnailSize);
+		for (AnnotatedPhoto photo : album.photoList) {
+			if (!photo.imageLoaded) {
+				photo.image = errorImage;
+				photo.thumbnail = errorImageThumbnail;
+			}
+		}
 		return true;
 	}
 	

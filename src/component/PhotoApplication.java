@@ -32,7 +32,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import custom.GlobalSettings;
 import custom.ResourceManager;
 import custom.SavedSettings;
-import model.AnnotatedPhoto;
 import model.PhotoApplicationModel;
 import model.PhotoEvent;
 import model.PhotoListener;
@@ -80,13 +79,15 @@ public class PhotoApplication extends JFrame implements PhotoListener {
         
         app = this;
         
-        model = new PhotoApplicationModel();
-        model.setAlbumLocation(GlobalSettings.savedAlbumLocation);
-        model.setThumbnailSize(GlobalSettings.thumbnailSize);
-        model.loadAlbum();
-        
         ResourceManager.loadResources();
         loadIcons();
+        
+        model = new PhotoApplicationModel();
+        model.setAlbumLocation(GlobalSettings.savedAlbumLocation);
+        model.setErrorImage(ResourceManager.errorImage);
+        model.setErrorImageThumbnail(ResourceManager.errorImageThumbnail);
+        model.setThumbnailSize(GlobalSettings.thumbnailSize);
+        model.loadAlbum();
         
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
        
@@ -316,7 +317,7 @@ public class PhotoApplication extends JFrame implements PhotoListener {
         toggleStraightLine.addActionListener(
         		event -> {
         			photoComponent.isCreatingPrimitive = true;
-        			photoComponent.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.StraightLine;
+        			photoComponent.currentPrimitiveType = PhotoComponent.PrimitiveType.StraightLine;
         		}
         );
         toggleRectangle.setIcon(toggleRectangleIcon);
@@ -324,7 +325,7 @@ public class PhotoApplication extends JFrame implements PhotoListener {
         toggleRectangle.addActionListener(
         		event -> {
         			photoComponent.isCreatingPrimitive = true;
-        			photoComponent.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.Rectangle;
+        			photoComponent.currentPrimitiveType = PhotoComponent.PrimitiveType.Rectangle;
         		}
         );
         toggleEllipse.setIcon(toggleEllipseIcon);
@@ -332,7 +333,7 @@ public class PhotoApplication extends JFrame implements PhotoListener {
         toggleEllipse.addActionListener(
         		event -> {
         			photoComponent.isCreatingPrimitive = true;
-        			photoComponent.currentPrimitiveType = AnnotatedPhoto.PrimitiveMark.Type.Ellipse;
+        			photoComponent.currentPrimitiveType = PhotoComponent.PrimitiveType.Ellipse;
         		}
         );
         

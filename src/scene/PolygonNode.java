@@ -7,6 +7,8 @@ import java.util.List;
 
 public class PolygonNode extends ShapeNode {
 	
+	private static final long serialVersionUID = 1L;
+	
 	public List<Point> corners;
 	
 	public PolygonNode(List<Point> corners) {

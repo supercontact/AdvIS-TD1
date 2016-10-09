@@ -23,10 +23,11 @@ public class Context {
 		this.graphics = graphics;
 		graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		
 		stack = new Stack<>();
 		ContextState defaultState = new ContextState();
-		defaultState.transform = new AffineTransform();
+		defaultState.transform = graphics.getTransform();
 		defaultState.strokeWidth = 1f;
 		defaultState.strokeColor = Color.BLACK;
 		defaultState.fillColor = Color.BLACK;
@@ -35,7 +36,7 @@ public class Context {
 		defaultState.textStyle = Font.PLAIN;
 		defaultState.font = Font.SANS_SERIF;
 		defaultState.alpha = 1;
-		defaultState.clip = null;
+		defaultState.clip = graphics.getTransform().createTransformedShape(graphics.getClip());
 		stack.push(defaultState);
 	}
 	

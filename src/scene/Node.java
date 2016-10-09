@@ -8,14 +8,20 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 
 // The basic Node class without any graphical content. Every node can be a container, or serve as root.
-public class Node {
+public class Node implements Serializable {
 
-	private Node parent;
+	private static final long serialVersionUID = 1L;
+	
+	// Make this field transient to prevent all the parents being serialized.
+	// Need to call reconstruct() to reassign parent.
+	private transient Node parent;
+	
 	private ArrayList<Node> children;
 	private double posX = 0, posY = 0;
 	private double rotation = 0;
@@ -47,7 +53,9 @@ public class Node {
 		if (this.parent != null) {
 			this.parent.removeChild(this);
 		}
-		parent.addChild(this);
+		if (parent != null) {
+			parent.addChild(this);
+		}
 	}
 	
 	public int getChildCount() {
@@ -67,8 +75,15 @@ public class Node {
 		child.parent = this;
 	}
 	public void removeChild(Node child) {
-		children.remove(child);
-		child.parent = null;
+		if (children.remove(child)) {
+			child.parent = null;
+		}
+	}
+	public void removeAllChild() {
+		for (Node child : children) {
+			child.parent = null;
+		}
+		children.clear();
 	}
 	
 	public double getX() {
@@ -165,6 +180,14 @@ public class Node {
 		return new Rectangle(0, 0, -1, -1);
 	}
 	
+	// Reassign the correct parent after being loaded from a serialized state
+	public void reconstruct() {
+		for (Node child : children) {
+			child.parent = this;
+			child.reconstruct();
+		}
+	}
+	
 	// Painting methods
 	public void paint(Context context) {
 		if (!isVisible) return;
@@ -215,9 +238,7 @@ public class Node {
 		context.graphics.draw(getLocalBounds());
 		context.graphics.setColor(Color.RED);
 		context.graphics.draw(getContentBounds());
-		
 	}
-	
 	
 		
 	// A utility function that calculate bounds from a list of points

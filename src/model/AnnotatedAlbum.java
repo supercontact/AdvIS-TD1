@@ -48,6 +48,7 @@ public class AnnotatedAlbum implements Serializable {
 		if (url.exists()) {
 			AnnotatedAlbum album = (AnnotatedAlbum)SerializationControl.load(url);
 			album.reindex();
+			album.reconstruct();
 			return album;
 		}
 		return null;
@@ -56,6 +57,11 @@ public class AnnotatedAlbum implements Serializable {
 	private void reindex() {
 		for (int i = 0; i < photoList.size(); i++) {
 			photoList.get(i).setIndex(i);
+		}
+	}
+	private void reconstruct() {
+		for (int i = 0; i < photoList.size(); i++) {
+			photoList.get(i).annotation.reconstruct();
 		}
 	}
 	

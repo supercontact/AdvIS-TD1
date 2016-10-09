@@ -4,13 +4,12 @@ import java.awt.Point;
 import java.awt.Shape;
 import java.awt.geom.Line2D;
 
-public class StraightLineNode extends ShapeNode {
+public class StraightLineNode extends PrimitiveNode {
 	
-	public Point p1, p2;
+	private static final long serialVersionUID = 1L;
 	
 	public StraightLineNode(Point p1, Point p2) {
-		this.p1 = p1;
-		this.p2 = p2;
+		super(p1, p2);
 	}
 	
 	@Override

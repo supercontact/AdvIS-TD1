@@ -80,7 +80,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 		// Clean old stuff
 		if (oldMode == PhotoApplicationModel.ViewMode.PhotoViewer) {
 			scrollPane.setViewportView(null);
-			mainPhoto.deinit();
+			mainPhoto.deactivate();
 		} else if (oldMode == PhotoApplicationModel.ViewMode.Browser) {
 			
 		}
@@ -89,7 +89,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 		if (newMode == PhotoApplicationModel.ViewMode.PhotoViewer) {
 			scrollPane.setWheelScrollingEnabled(false);
 			scrollPane.setViewportView(mainPhoto);
-			mainPhoto.init();
+			mainPhoto.activate();
 		} else if (newMode == PhotoApplicationModel.ViewMode.Browser) {
 			scrollPane.setWheelScrollingEnabled(true);
 			scrollPane.setViewportView(photoIconWall);

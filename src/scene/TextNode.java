@@ -1,19 +1,25 @@
 package scene;
 
+import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class TextNode extends Node {
 	
+	private static final long serialVersionUID = 2L;
+	
 	public String text;
 	public double lineSpacing = 1;
 	public int width = Integer.MAX_VALUE;
-	public boolean showMarker = false;
-	public int markerPosition = 0;
 	
-	private PolygonNode marker;
+	public transient boolean showMarker = false;
+	public transient int markerPosition = 0;
+	
+	private transient PolygonNode marker;
+	
 	private Rectangle calculatedBounds;
 	
 	public TextNode() {
@@ -64,6 +70,9 @@ public class TextNode extends Node {
 			
 			lineStartPos += line.length();
 			posY += lineHeight;
+		}
+		if (lines.size() == 0) {
+			marker.setPosition(new Point(0, 0));
 		}
 		
 		calculatedBounds = new Rectangle(0, -lineHeight, maxWidth, lineHeight * lines.size());
@@ -121,5 +130,11 @@ public class TextNode extends Node {
 		markerCorners.add(new Point(-25, 50));
 		markerCorners.add(new Point(25, 50));
 		marker = new PolygonNode(markerCorners);
+		marker.fillColor = Color.BLACK;
+	}
+	
+	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+		in.defaultReadObject();
+		createMarker();
 	}
 }

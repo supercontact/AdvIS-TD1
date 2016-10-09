@@ -5,7 +5,10 @@ import java.awt.Rectangle;
 
 public class ImageNode extends Node {
 	
-	public Image image;
+	private static final long serialVersionUID = 1L;
+	
+	// Need modification to make it serializable
+	public transient Image image;
 	
 	public ImageNode() {}
 	public ImageNode(Image image) {

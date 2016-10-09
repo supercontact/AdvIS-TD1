@@ -5,6 +5,8 @@ import java.awt.Shape;
 
 public class ShapeNode extends Node {
 	
+	private static final long serialVersionUID = 1L;
+	
 	public Shape shape;
 	public boolean drawBorder = true;
 	public boolean fillInside = true;
