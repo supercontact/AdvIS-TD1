@@ -57,8 +57,8 @@ public class PhotoApplication extends JFrame implements PhotoListener {
     PhotoContainer photoContainer;
     PhotoComponent photoComponent;
     FadePanel controlPanel, controlPanelEditMode;
-    JButton prev, next;
-    ImageIcon prevIcon, nextIcon;
+    JButton prev, next, returnToBrowser;
+    ImageIcon prevIcon, nextIcon, returnIcon;
     JToggleButton toggleStroke, toggleStraightLine, toggleRectangle, toggleEllipse;
     ImageIcon toggleStrokeIcon, toggleStraightLineIcon, toggleRectangleIcon, toggleEllipseIcon;
     ButtonGroup toggleDrawingGroup;
@@ -110,6 +110,7 @@ public class PhotoApplication extends JFrame implements PhotoListener {
     private void loadIcons() {
     	prevIcon = new ImageIcon(ResourceManager.prevIcon);
     	nextIcon = new ImageIcon(ResourceManager.nextIcon);
+    	returnIcon = new ImageIcon(ResourceManager.returnIcon);
     	toggleStrokeIcon = new ImageIcon(ResourceManager.lineIcon.getScaledInstance(40, 40, Image.SCALE_SMOOTH));
     	toggleStraightLineIcon = new ImageIcon(ResourceManager.straightLineIcon.getScaledInstance(40, 40, Image.SCALE_SMOOTH));
     	toggleRectangleIcon = new ImageIcon(ResourceManager.rectangleIcon.getScaledInstance(40, 40, Image.SCALE_SMOOTH));
@@ -259,7 +260,9 @@ public class PhotoApplication extends JFrame implements PhotoListener {
         
         prev = new JButton();
         next = new JButton();
+        returnToBrowser = new JButton();
         controlPanel.add(prev);
+        controlPanel.add(returnToBrowser);
         controlPanel.add(next);
         controlPanel.setOpaque(false);
         
@@ -272,6 +275,11 @@ public class PhotoApplication extends JFrame implements PhotoListener {
         next.setMargin(normalInsets);
         next.addActionListener(
         		event -> model.nextPhoto()
+        );
+        returnToBrowser.setIcon(returnIcon);
+        returnToBrowser.setMargin(zeroInsets);
+        returnToBrowser.addActionListener(
+        		event -> model.setViewMode(PhotoApplicationModel.ViewMode.Browser)
         );
         
         toggleStroke = new JToggleButton();

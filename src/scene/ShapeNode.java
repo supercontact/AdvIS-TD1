@@ -4,6 +4,8 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 
 // This node displays a Shape object.
+// It can also be used as a clipping mask.
+
 public class ShapeNode extends Node {
 	
 	private static final long serialVersionUID = 1L;
@@ -11,6 +13,8 @@ public class ShapeNode extends Node {
 	public Shape shape;
 	public boolean drawBorder = true;
 	public boolean fillInside = true;
+	
+	private boolean clipMode = false;
 	
 	public ShapeNode() {}
 	public ShapeNode(Shape shape) {
@@ -30,6 +34,7 @@ public class ShapeNode extends Node {
 	@Override
 	public void paintNode(Context context) {
 		Shape s = getShape();
+		if (s == null || clipMode) return;
 		if (fillInside) {
 			context.beginFill();
 			context.graphics.fill(s);
@@ -37,6 +42,16 @@ public class ShapeNode extends Node {
 		if (drawBorder) {
 			context.beginStroke();
 			context.graphics.draw(s);
+		}
+	}
+	
+	public void useAsClip(boolean useShapeAsClip) {
+		if (useShapeAsClip) {
+			clipMode = true;
+			clip = getShape();
+		} else {
+			clipMode = false;
+			clip = null;
 		}
 	}
 	

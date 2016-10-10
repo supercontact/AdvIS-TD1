@@ -20,6 +20,7 @@ public class ResourceManager {
 	public static Image errorImageThumbnail;
 	public static BufferedImage prevIcon;
 	public static BufferedImage nextIcon;
+	public static BufferedImage returnIcon;
 	public static BufferedImage lineIcon;
 	public static BufferedImage straightLineIcon;
 	public static BufferedImage rectangleIcon;
@@ -33,6 +34,7 @@ public class ResourceManager {
 	private final static File errorImageLocation = findResource("noImage.png");
 	private final static File prevIconLocation = findResource("prev.png");
 	private final static File nextIconLocation = findResource("next.png");
+	private final static File returnIconLocation = findResource("return.png");
 	private final static File lineIconLocation = findResource("line.png");
 	private final static File straightLineIconLocation = findResource("straightLine.png");
 	private final static File rectangleIconLocation = findResource("rectangle.png");
@@ -49,6 +51,7 @@ public class ResourceManager {
 			errorImageThumbnail = errorImage.getScaledInstance(GlobalSettings.thumbnailSize, GlobalSettings.thumbnailSize, Image.SCALE_SMOOTH);
 			prevIcon = ImageIO.read(prevIconLocation);
 			nextIcon = ImageIO.read(nextIconLocation);
+			returnIcon = ImageIO.read(returnIconLocation);
 			lineIcon = ImageIO.read(lineIconLocation);
 			straightLineIcon = ImageIO.read(straightLineIconLocation);
 			rectangleIcon = ImageIO.read(rectangleIconLocation);
