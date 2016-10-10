@@ -21,6 +21,10 @@ import model.PhotoApplicationModel;
 import model.PhotoEvent;
 import model.PhotoListener;
 
+// This component is the main body of the photo browser.
+// It shows a grid of PhotoIcons in browser mode, and shows a PhotoComponent in the photo viewer mode.
+// It also contains the floating control panel.
+
 public class PhotoContainer extends JLayeredPane implements MouseMotionListener, PhotoListener {
 
 	private static final long serialVersionUID = 1L;
@@ -109,6 +113,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 		updateControlPanelFade();
 	}
 	
+	// Painting methods
 	@Override
 	public void paintComponent(Graphics graphics) {
 		paintBackground(graphics);
@@ -137,6 +142,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 		}
 	}
 	
+	// Updates
 	private void updateScrollPane() {
 		scrollPane.setLocation(new Point(0, 0));
 		scrollPane.setSize(getSize().width + 2, getSize().height + 1); // To avoid the 1 pixel margin at the border
@@ -203,7 +209,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 	}
 
 	
-
+	// MouseMotionListener: mouse events
 	@Override
 	public void mouseMoved(MouseEvent e) {
 		Point pos = getMousePosition(true);
@@ -220,8 +226,36 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 			updateControlPanelFade();
 		}
 	}
-
 	
+	// PhotoListener: React when the model is changed.
+	@Override
+	public void photoEventReceived(PhotoEvent e) {
+		if (e.type == PhotoEvent.Type.ViewModeChanged) {
+			switchViewMode(e.oldViewMode, e.newViewMode);
+			
+		} else if (e.type == PhotoEvent.Type.PhotoAdded) {
+			PhotoIcon newIcon = new PhotoIcon(e.photo);
+			photoIcons.add(newIcon);
+			photoIconWall.add(newIcon);
+			updateIconWall();
+			
+		} else if (e.type == PhotoEvent.Type.PhotoRemoved) {
+			PhotoIcon iconRemoved = null;
+			for (int i = 0; i < photoIcons.size(); i++) {
+				if (photoIcons.get(i).photo == e.photo) {
+					iconRemoved = photoIcons.get(i);
+					photoIcons.remove(i);
+					break;
+				}
+			}
+			photoIconWall.remove(iconRemoved);
+			updateIconWall();
+		}
+	}
+
+
+	// This class processes mouse operations on the photo icon wall in browser modes, 
+	// and changes the state of PhotoIcons.
 	private class IconWallMouseEventHandler implements MouseListener, MouseMotionListener {
 		
 		private PhotoContainer container;
@@ -236,6 +270,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 		@Override
 		public void mouseClicked(MouseEvent e) {
 			if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() >= 2 && currentTarget != null) {
+				// Double click: Enter photo viewer mode showing the photo being clicked.
 				container.model.setViewMode(PhotoApplicationModel.ViewMode.PhotoViewer);
 				container.model.setCurrentViewingIndex(currentTarget.photo.getIndex());
 			}
@@ -301,32 +336,6 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 		@Override
 		public void mouseExited(MouseEvent e) {
 			// Do nothing
-		}
-	}
-
-
-	@Override
-	public void photoEventReceived(PhotoEvent e) {
-		if (e.type == PhotoEvent.Type.ViewModeChanged) {
-			switchViewMode(e.oldViewMode, e.newViewMode);
-			
-		} else if (e.type == PhotoEvent.Type.PhotoAdded) {
-			PhotoIcon newIcon = new PhotoIcon(e.photo);
-			photoIcons.add(newIcon);
-			photoIconWall.add(newIcon);
-			updateIconWall();
-			
-		} else if (e.type == PhotoEvent.Type.PhotoRemoved) {
-			PhotoIcon iconRemoved = null;
-			for (int i = 0; i < photoIcons.size(); i++) {
-				if (photoIcons.get(i).photo == e.photo) {
-					iconRemoved = photoIcons.get(i);
-					photoIcons.remove(i);
-					break;
-				}
-			}
-			photoIconWall.remove(iconRemoved);
-			updateIconWall();
 		}
 	}
 }

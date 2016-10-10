@@ -34,6 +34,10 @@ import scene.RectangleNode;
 import scene.StraightLineNode;
 import scene.TextNode;
 
+// This component displays an AnnotatedPhoto of the album.
+// It allows creating annotations when the photo is flipped.
+// The component should be added in a JScollpane to function properly.
+
 public class PhotoComponent extends GraphicalComponent implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener, ActionListener, PhotoListener {
 
 	private static final long serialVersionUID = 1L;
@@ -379,7 +383,7 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 		
 		if (!activated) return;
 		updateGraphicalNodes();
-		super.paintComponent(graphics);
+		super.paintComponent(graphics); // Let the super class GraphicalComponent draw the graphical content.
 	}
 	
 	
@@ -466,8 +470,10 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 		requestFocusInWindow();
 		if (model.isShowingPhoto() && !isLocked) {
 			if (e.getClickCount() == 1 && model.isFlipped()) {
+				// Single click: Start editing text
 				createTextField(componentToImageCoordinates(e.getPoint()));
 			} else if (e.getClickCount() % 2 == 0) {
+				// Double click: Flip photo
 				cancelEditing();
 				flipPhoto();
 			}
@@ -492,6 +498,7 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 	public void mouseDragged(MouseEvent e) {
 		if (!isLocked) {
 			if (canStartDrawing && model.isFlipped() && SwingUtilities.isLeftMouseButton(e)) {
+				// Dragging at the back of the photo: Draw things
 				cancelEditing();
 				if (isCreatingPrimitive) {
 					drawPrimitiveTo(e.getPoint());
@@ -499,6 +506,7 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 					drawStrokeTo(e.getPoint());
 				}
 			} else {
+				// Dragging the photo (or the back of the photo with right mouse button): Move photo
 				scrollPhoto(e.getPoint().x - prevMouseDragPos.x, e.getPoint().y - prevMouseDragPos.y);
 			}
 		}
@@ -506,10 +514,10 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		if (e.isControlDown()) {
-			// Scaling
+			// Ctrl + mouse wheel: Scaling
 			scalePhoto(e.getWheelRotation(), e.getPoint());
 		} else {
-			// Navigating
+			// Mouse wheel: Navigating
 			if (e.getWheelRotation() > 0) {
 				model.nextPhoto();
 			} else {
@@ -538,8 +546,10 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 		if (isEditingText && !e.isControlDown() && !isLocked) {
 			char c = e.getKeyChar();
 			if ((int)c == KeyEvent.VK_BACK_SPACE) {
+				// Back space key: Delete character
 				deleteCharacter();
 			} else if (c != KeyEvent.CHAR_UNDEFINED) {
+				// Other key: Insert character
 				insertCharacter(c);
 			}
 		}
@@ -547,14 +557,14 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 	@Override
 	public void keyPressed(KeyEvent e) {
 		if (!isEditingText) {
-			// Jump to another photo in the album
+			// Left & Right keys: Jump to another photo in the album
 			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
 				model.nextPhoto();
 			} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
 				model.prevPhoto();
 			}
 		} else {
-			// Navigate the pointer in the current editing annotation
+			// Left & Right keys when editing: Navigate the pointer in the current editing annotation
 			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
 				textEditingPos = Math.min(textEditingPos + 1, currentText.text.length());
 				repaint();
@@ -564,6 +574,7 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 			}
 		}
 		if (model.isFlipped() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_Z) {
+			// Ctrl + z: Undo
 			undo();
 		}
 		e.consume();

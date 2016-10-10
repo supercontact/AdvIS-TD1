@@ -6,6 +6,7 @@ import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.List;
 
+// This node displays a path.
 public class PathNode extends ShapeNode {
 	
 	private static final long serialVersionUID = 1L;

@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.awt.Shape;
 import java.awt.geom.Line2D;
 
+// This node displays a straight line.
 public class StraightLineNode extends PrimitiveNode {
 	
 	private static final long serialVersionUID = 1L;

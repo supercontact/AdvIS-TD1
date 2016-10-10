@@ -10,6 +10,8 @@ import javax.imageio.ImageIO;
 
 import component.PhotoApplication;
 
+// This class manages the loading of resources of the application.
+// The resources include button icons, background, image labels, etc.
 public class ResourceManager {
 
 	public static BufferedImage backgroundImage;

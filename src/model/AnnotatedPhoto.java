@@ -10,6 +10,7 @@ import javax.imageio.ImageIO;
 
 import scene.Node;
 
+// This class represents an imported photo along with all the annotations added to it.
 public class AnnotatedPhoto implements Serializable {
 	
 	private static final long serialVersionUID = 5L;

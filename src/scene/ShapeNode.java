@@ -3,6 +3,7 @@ package scene;
 import java.awt.Rectangle;
 import java.awt.Shape;
 
+// This node displays a Shape object.
 public class ShapeNode extends Node {
 	
 	private static final long serialVersionUID = 1L;

@@ -10,6 +10,7 @@ import javax.swing.JComponent;
 import scene.Context;
 import scene.Node;
 
+// This component displays a node representing a scene-graph.
 public class GraphicalComponent extends JComponent {
 	
 	private static final long serialVersionUID = 1L;

@@ -11,6 +11,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.util.Stack;
 
+// This class holds the graphical context information when the scene-graph is being drawn.
+// It provides functionality to combine transform/alpha/clipping, and the ability to roll back to the previous state.
+
 public class Context {
 	
 	public Graphics2D graphics;

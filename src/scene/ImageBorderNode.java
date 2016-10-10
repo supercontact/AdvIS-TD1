@@ -3,7 +3,7 @@ package scene;
 import java.awt.Image;
 import java.awt.Rectangle;
 
-// A node taking a 9-sliced image to draw a rectangle border.
+// This node takes a 9-sliced image to draw a rectangle border.
 public class ImageBorderNode extends Node {
 	
 	private static final long serialVersionUID = 1L;

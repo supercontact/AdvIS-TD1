@@ -13,7 +13,9 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 
-// The basic Node class without any graphical content. Every node can be a container, or serve as root.
+// This class represents the base of a scene-graph node. It does not contain any graphical content.
+// Every node can be a container, or serve as root.
+
 public class Node implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -22,6 +24,7 @@ public class Node implements Serializable {
 	// Need to call reconstruct() to reassign parent.
 	private transient Node parent;
 	
+	// Controlled parameters, to be accessed via getter/setters
 	private ArrayList<Node> children;
 	private double posX = 0, posY = 0;
 	private double rotation = 0;
@@ -29,6 +32,7 @@ public class Node implements Serializable {
 	private AffineTransform transform;
 	private AffineTransform customTransform;
 	
+	// Public parameters, can be accessed freely
 	public boolean isVisible = true;
 	public Float strokeWidth = null;
 	public Color strokeColor = null;
@@ -39,6 +43,7 @@ public class Node implements Serializable {
 	public String font = null;
 	public float alpha = 1;
 	public Shape clip = null;
+	public boolean showBounds = false;
 	
 	public Node() {
 		transform = new AffineTransform();
@@ -86,6 +91,9 @@ public class Node implements Serializable {
 		children.clear();
 	}
 	
+	// Transform: The AffineTransform of the node is obtained by applying in this order:
+	// 1 - Scaling, 2 - Rotation, 3 - Translation
+	// Which means Tfinal = Ttranslation * Trotation * Tscaling
 	public double getX() {
 		return posX;
 	}
@@ -133,6 +141,8 @@ public class Node implements Serializable {
 			return transform;
 		}
 	}
+	// Set a custom AffineTransform.
+	// Any attempt to modify the position/rotation/scaling afterwards will cancel its effect.
 	public void setTransform(AffineTransform transform) {
 		customTransform = transform;
 	}
@@ -209,7 +219,7 @@ public class Node implements Serializable {
 		// Paint objects
 		paintNode(context);
 		paintChildren(context);
-		if (context.showBounds) {
+		if (context.showBounds || showBounds) {
 			paintBounds(context);
 		}
 		
@@ -269,7 +279,7 @@ public class Node implements Serializable {
 	}
 	
 	
-	
+	// A list view of the children. Has correct behaviors when modifying the list.
 	private class ChildrenView extends AbstractList<Node> {
 		
 		private Node node;

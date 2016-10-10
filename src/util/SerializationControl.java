@@ -13,6 +13,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 
+// This static class provides methods to easily save/load serialized objects to/from the file system.
 public class SerializationControl {
 
 	public static Object load(File file) {

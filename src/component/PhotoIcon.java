@@ -12,6 +12,8 @@ import scene.ImageNode;
 import scene.Node;
 import scene.RectangleNode;
 
+// This component show an icon of the photo, which can be selected.
+// It is similar to a JToggleButton, but it also support mouse dragging to select/deselect a group of icons at once.
 public class PhotoIcon extends GraphicalComponent {
 
 	private static final long serialVersionUID = 1L;
@@ -74,6 +76,7 @@ public class PhotoIcon extends GraphicalComponent {
 		photoContainerNode.addChild(frameNode);
 	}
 	
+	// The states of the icon
 	public boolean isRollover() {
 		return isRollover;
 	}
@@ -96,12 +99,14 @@ public class PhotoIcon extends GraphicalComponent {
 		repaint();
 	}
 
+	// Painting method
 	@Override
 	public void paintComponent(Graphics graphics) {
 		updateGraphicalNodes();
 		super.paintComponent(graphics);
 	}
 	
+	// Update
 	private void updateGraphicalNodes() {
 		photoContainerNode.setPosition(getWidth() / 2, getHeight() / 2);
 		if (isPressed) {

@@ -5,6 +5,7 @@ import java.nio.file.FileSystems;
 
 import util.SerializationControl;
 
+// This class holds user specific settings that are kept between launches of the application.
 public class SavedSettings implements Serializable {
 
 	private static final long serialVersionUID = 1L;

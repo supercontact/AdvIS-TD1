@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+// This class is the core model of the whole application.
+// It provides core functionalities like adding/removing photos, saving/loading album, etc.
+// It will fire corresponding PhotoEvents when things happen.
+
 public class PhotoApplicationModel {
 
 	public enum ViewMode {
@@ -159,19 +163,6 @@ public class PhotoApplicationModel {
 		
 	}
 	
-	public void setAlbumLocation(File url) {
-		albumLocation = url;
-	}
-	public void setErrorImage(Image image) {
-		errorImage = image;
-	}
-	public void setErrorImageThumbnail(Image image) {
-		errorImageThumbnail = image;
-	}
-	public void setThumbnailSize(int size) {
-		thumbnailSize = size;
-	}
-	
 	public boolean saveAlbum() {
 		if (album.saveAlbum(albumLocation)) {
 			firePhotoEvent(PhotoEvent.CreateAlbumSavedEvent(this));
@@ -197,11 +188,26 @@ public class PhotoApplicationModel {
 				photo.thumbnail = errorImageThumbnail;
 			}
 		}
+		firePhotoEvent(PhotoEvent.CreateAlbumLoadedEvent(this));
 		return true;
 	}
 	
+	// Specifying certain parameters
+	public void setAlbumLocation(File url) {
+		albumLocation = url;
+	}
+	public void setErrorImage(Image image) {
+		errorImage = image;
+	}
+	public void setErrorImageThumbnail(Image image) {
+		errorImageThumbnail = image;
+	}
+	public void setThumbnailSize(int size) {
+		thumbnailSize = size;
+	}
 	
-	// Events
+	
+	// Event management
 	public void addPhotoListener(PhotoListener listener) {
 		listeners.add(listener);
 	}

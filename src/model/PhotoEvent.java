@@ -1,5 +1,8 @@
 package model;
 
+// This class represents an event fired by the PhotoApplicationModel.
+// It can be of many different types.
+
 public class PhotoEvent {
 	public enum Type {
 		ViewModeChanged,
@@ -10,7 +13,8 @@ public class PhotoEvent {
 		PhotoDeselected,
 		PhotoAdded,
 		PhotoRemoved,
-		AlbumSaved
+		AlbumSaved,
+		AlbumLoaded
 	}
 	
 	public PhotoApplicationModel model;
@@ -82,5 +86,8 @@ public class PhotoEvent {
 	}
 	public static PhotoEvent CreateAlbumSavedEvent(PhotoApplicationModel model) {
 		return new PhotoEvent(model, Type.AlbumSaved);
+	}
+	public static PhotoEvent CreateAlbumLoadedEvent(PhotoApplicationModel model) {
+		return new PhotoEvent(model, Type.AlbumLoaded);
 	}
 }

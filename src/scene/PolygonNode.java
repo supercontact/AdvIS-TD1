@@ -5,6 +5,7 @@ import java.awt.Polygon;
 import java.awt.Shape;
 import java.util.List;
 
+// This node displays a polygon.
 public class PolygonNode extends ShapeNode {
 	
 	private static final long serialVersionUID = 1L;

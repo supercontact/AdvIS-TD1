@@ -7,6 +7,10 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.util.ArrayList;
 
+// This node displays a piece of text, constraint by a certain width limit.
+// It will automatically break lines at appropriate position.
+// It also contains a marker which can be displayed when editing the text.
+
 public class TextNode extends Node {
 	
 	private static final long serialVersionUID = 2L;

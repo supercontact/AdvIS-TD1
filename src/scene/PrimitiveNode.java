@@ -2,6 +2,7 @@ package scene;
 
 import java.awt.Point;
 
+// A primitive node is a ShapeNode that can be controlled by 2 input points (or some other parameters).
 public abstract class PrimitiveNode extends ShapeNode {
 	
 	private static final long serialVersionUID = 1L;

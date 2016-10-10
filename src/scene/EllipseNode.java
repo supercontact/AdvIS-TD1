@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 
+// This node displays an ellipse.
 public class EllipseNode extends PrimitiveNode {
 	
 	private static final long serialVersionUID = 1L;

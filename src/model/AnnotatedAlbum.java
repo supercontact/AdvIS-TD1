@@ -5,6 +5,9 @@ import java.util.ArrayList;
 
 import util.SerializationControl;
 
+// This class represents an album containing all the imported photos.
+// It is saved and loaded each time the application launches.
+
 public class AnnotatedAlbum implements Serializable {
 
 	private static final long serialVersionUID = 1L;

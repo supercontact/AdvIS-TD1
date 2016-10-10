@@ -3,6 +3,7 @@ package scene;
 import java.awt.Image;
 import java.awt.Rectangle;
 
+// This node displays an image.
 public class ImageNode extends Node {
 	
 	private static final long serialVersionUID = 1L;

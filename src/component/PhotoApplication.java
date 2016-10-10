@@ -36,6 +36,7 @@ import model.PhotoApplicationModel;
 import model.PhotoEvent;
 import model.PhotoListener;
 
+// The main photo browser application
 public class PhotoApplication extends JFrame implements PhotoListener {
 
     private static final long serialVersionUID = 1L;

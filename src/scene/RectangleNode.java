@@ -5,6 +5,7 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.RoundRectangle2D;
 
+// This node displays a rectangle.
 public class RectangleNode extends PrimitiveNode {
 	
 	private static final long serialVersionUID = 1L;
