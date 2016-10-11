@@ -190,6 +190,20 @@ public class Node implements Serializable {
 		return new Rectangle(0, 0, -1, -1);
 	}
 	
+	public boolean isContainedInGlobalRegion(Rectangle rect) {
+		AffineTransform globalTransform = getGlobalTransform();
+		Rectangle localBounds = getLocalBounds();
+		ArrayList<Point2D> boundsCorners = new ArrayList<>();
+		boundsCorners.add(globalTransform.transform(new Point(localBounds.x, localBounds.y), null));
+		boundsCorners.add(globalTransform.transform(new Point(localBounds.x + localBounds.width, localBounds.y), null));
+		boundsCorners.add(globalTransform.transform(new Point(localBounds.x, localBounds.y + localBounds.height), null));
+		boundsCorners.add(globalTransform.transform(new Point(localBounds.x + localBounds.width, localBounds.y + localBounds.height), null));
+		for (Point2D p : boundsCorners) {
+			if (!rect.contains(p)) return false;
+		}
+		return true;
+	}
+	
 	// Reassign the correct parent after being loaded from a serialized state
 	public void reconstruct() {
 		for (Node child : children) {

@@ -53,7 +53,8 @@ public class PhotoApplication extends JFrame implements PhotoListener {
     JCheckBoxMenuItem scaleSmallImageItem;
     JMenuItem originalSizeItem, fitWindowItem, fitWidthItem, fitHeightItem;
     JToolBar tool;
-    ArrayList<JToggleButton> categories; 
+    JButton manageTags;
+    ArrayList<JToggleButton> tags; 
     PhotoContainer photoContainer;
     PhotoComponent photoComponent;
     FadePanel controlPanel, controlPanelEditMode;
@@ -212,12 +213,20 @@ public class PhotoApplication extends JFrame implements PhotoListener {
     	tool = new JToolBar();
     	add(tool, BorderLayout.NORTH);
     	
-    	categories = new ArrayList<>(); 
-    	categories.add(new JToggleButton("Family"));
-        categories.add(new JToggleButton("Vacation"));
-        categories.add(new JToggleButton("School"));
+    	manageTags = new JButton("Set Tags");
+    	manageTags.setMinimumSize(new Dimension(80, 30));
+    	manageTags.setPreferredSize(new Dimension(80, 30));
+    	manageTags.setMaximumSize(new Dimension(80, 30));
+    	manageTags.setBackground(new Color(192, 192, 255, 128));
+    	
+    	tool.add(manageTags);
+    	
+    	tags = new ArrayList<>(); 
+    	tags.add(new JToggleButton("Family"));
+        tags.add(new JToggleButton("Vacation"));
+        tags.add(new JToggleButton("School"));
         
-        for (JToggleButton button : categories) {
+        for (JToggleButton button : tags) {
         	button.setMinimumSize(new Dimension(80, 30));
         	button.setPreferredSize(new Dimension(80, 30));
         	button.setMaximumSize(new Dimension(80, 30));

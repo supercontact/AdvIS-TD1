@@ -567,9 +567,11 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 			// Left & Right keys when editing: Navigate the pointer in the current editing annotation
 			if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
 				textEditingPos = Math.min(textEditingPos + 1, currentText.text.length());
+				currentText.markerPosition = textEditingPos;
 				repaint();
 			} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
 				textEditingPos = Math.max(textEditingPos - 1, 0);
+				currentText.markerPosition = textEditingPos;
 				repaint();
 			}
 		}

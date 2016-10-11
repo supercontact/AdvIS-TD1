@@ -26,7 +26,7 @@ public class GraphicalComponent extends JComponent {
 	@Override
 	public void paintComponent(Graphics g) {
 		if (graphicalNode != null) {
-			Context context = new Context((Graphics2D)g);
+			Context context = new Context((Graphics2D)g.create());
 			context.showBounds = showBounds;
 			graphicalNode.paint(context);
 		}
