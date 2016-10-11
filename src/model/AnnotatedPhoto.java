@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 
@@ -13,10 +15,10 @@ import scene.Node;
 // This class represents an imported photo along with all the annotations added to it.
 public class AnnotatedPhoto implements Serializable {
 	
-	private static final long serialVersionUID = 5L;
+	private static final long serialVersionUID = 6L;
 
 	public File imageURL;
-	public ArrayList<String> tags;
+	public Set<String> tags;
 	public Node annotation;
 	
 	private ArrayList<Node> nodeList;
@@ -29,7 +31,7 @@ public class AnnotatedPhoto implements Serializable {
 	
 	public AnnotatedPhoto(File url) {
 		imageURL = url;
-		tags = new ArrayList<>();
+		tags = new HashSet<>();
 		annotation = new Node();
 		nodeList = new ArrayList<Node>();
 	}

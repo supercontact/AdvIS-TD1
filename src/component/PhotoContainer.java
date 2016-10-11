@@ -193,6 +193,27 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 	private void updateIconWall() {
 		int epsilon = 10;
 		
+		if (model.selectedTags.size() > 0) {
+			for (PhotoIcon icon : photoIcons) {
+				boolean visible = false;
+				for (String tag :  model.selectedTags) {
+					if (icon.photo.tags.contains(tag)) {
+						visible = true;
+						break;
+					}
+				}
+				icon.setVisible(visible);
+				if (!visible) {
+					icon.setSelected(false);
+					model.deselectPhoto(icon.photo.getIndex());
+				}
+			}
+		} else {
+			for (PhotoIcon icon : photoIcons) {
+				icon.setVisible(true);
+			}
+		}
+		
 		Dimension wallSize = getSize();
 		wallSize.width -= epsilon + scrollPane.getVerticalScrollBar().getWidth();
 		wallSize.height = 0;
@@ -249,6 +270,8 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 				}
 			}
 			photoIconWall.remove(iconRemoved);
+			updateIconWall();
+		} else if (e.type == PhotoEvent.Type.TagSelectionChanged) {
 			updateIconWall();
 		}
 	}

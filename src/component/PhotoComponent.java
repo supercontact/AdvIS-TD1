@@ -1,5 +1,6 @@
 package component;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Image;
@@ -431,6 +432,15 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 		}
 	}
 	
+	private void updateCursor(Point mousePosition) {
+		if (calculateImageRect().contains(mousePosition) && model.isFlipped()) {
+			setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+		} else {
+			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+		}
+	}
+	
+	
 	// Helper methods
 	public Rectangle calculateImageRect() {
 		if (!model.isShowingPhoto()) {
@@ -527,7 +537,7 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 	}
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		// Do nothing
+		updateCursor(e.getPoint());
 	}
 	@Override
 	public void mouseEntered(MouseEvent e) {

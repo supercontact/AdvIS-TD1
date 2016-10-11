@@ -13,9 +13,11 @@ public class AnnotatedAlbum implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	public ArrayList<AnnotatedPhoto> photoList;
+	public ArrayList<String> tags;
 
 	public AnnotatedAlbum() {
 		photoList = new ArrayList<>();
+		tags = new ArrayList<>();
 	}
 	
 	public AnnotatedPhoto importNewPhoto(File file) {

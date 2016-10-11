@@ -13,6 +13,7 @@ public class PhotoEvent {
 		PhotoDeselected,
 		PhotoAdded,
 		PhotoRemoved,
+		TagSelectionChanged,
 		AlbumSaved,
 		AlbumLoaded
 	}
@@ -82,6 +83,10 @@ public class PhotoEvent {
 	public static PhotoEvent CreatePhotoRemovedEvent(PhotoApplicationModel model, AnnotatedPhoto photo) {
 		PhotoEvent e = new PhotoEvent(model, Type.PhotoRemoved);
 		e.photo = photo;
+		return e;
+	}
+	public static PhotoEvent CreateTagSelectionChangedEvent(PhotoApplicationModel model) {
+		PhotoEvent e = new PhotoEvent(model, Type.TagSelectionChanged);
 		return e;
 	}
 	public static PhotoEvent CreateAlbumSavedEvent(PhotoApplicationModel model) {

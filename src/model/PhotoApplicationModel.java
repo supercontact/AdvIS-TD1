@@ -20,6 +20,7 @@ public class PhotoApplicationModel {
 	
 	public AnnotatedAlbum album;
 	public Set<AnnotatedPhoto> selectedPhotos;
+	public Set<String> selectedTags;
 	
 	private ViewMode mode = ViewMode.Hide;
 	private int currentViewingIndex = -1;
@@ -34,6 +35,7 @@ public class PhotoApplicationModel {
 	
 	public PhotoApplicationModel() {
 		selectedPhotos = new HashSet<>();
+		selectedTags = new HashSet<>();
 		listeners = new ArrayList<>();
 	}
 	
@@ -162,6 +164,64 @@ public class PhotoApplicationModel {
 		}
 		
 	}
+	
+	// Tags related methods
+	public boolean createNewTag(String tag) {
+		if (album.tags.contains(tag)) {
+			return false;
+		}
+		album.tags.add(tag);
+		saveAlbum();
+		return true;
+	}
+	
+	public void removeTag(String tag) {
+		album.tags.remove(tag);
+		for (AnnotatedPhoto photo : album.photoList) {
+			photo.tags.remove(tag);
+		}
+		saveAlbum();
+	}
+	
+	public void renameTag(String oldTagName, String newTagName) {
+		for (int i = 0; i < album.tags.size(); i++) {
+			if (album.tags.get(i).equals(oldTagName)) {
+				album.tags.set(i, newTagName);
+				break;
+			}
+		}
+		for (AnnotatedPhoto photo : album.photoList) {
+			if (photo.tags.remove(oldTagName)) {
+				photo.tags.add(newTagName);
+			}
+		}
+		saveAlbum();
+	}
+	
+	public void addTagToSelectedPhotos(String tag) {
+		for (AnnotatedPhoto photo : selectedPhotos) {
+			photo.tags.add(tag);
+		}
+		saveAlbum();
+	}
+	
+	public void removeTagFromSelectedPhotos(String tag) {
+		for (AnnotatedPhoto photo : selectedPhotos) {
+			photo.tags.remove(tag);
+		}
+		saveAlbum();
+	}
+	
+	public void selectTag(String tag) {
+		selectedTags.add(tag);
+		firePhotoEvent(PhotoEvent.CreateTagSelectionChangedEvent(this));
+	}
+	
+	public void deselectTag(String tag) {
+		selectedTags.remove(tag);
+		firePhotoEvent(PhotoEvent.CreateTagSelectionChangedEvent(this));
+	}
+	
 	
 	public boolean saveAlbum() {
 		if (album.saveAlbum(albumLocation)) {

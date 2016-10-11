@@ -1,5 +1,4 @@
 package custom;
-import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -28,6 +27,7 @@ public class ResourceManager {
 	public static BufferedImage lineWidthIcon;
 	public static BufferedImage textSizeIcon;
 	public static BufferedImage colorIcon;
+	public static BufferedImage trashIcon;
 	
 	private final static File backgroundImageLocation = findResource("bg.jpg");
 	private final static File frameImageLocation = findResource("frame.png");
@@ -42,6 +42,7 @@ public class ResourceManager {
 	private final static File lineWidthIconLocation = findResource("lineWidth.png");
 	private final static File textSizeIconLocation = findResource("textSize.png");
 	private final static File colorIconLocation = findResource("color.png");
+	private final static File trashIconLocation = findResource("trash.png");
 	
 	public static void loadResources() {
 		try {
@@ -59,18 +60,11 @@ public class ResourceManager {
 			lineWidthIcon = ImageIO.read(lineWidthIconLocation);
 			textSizeIcon = ImageIO.read(textSizeIconLocation);
 			colorIcon = ImageIO.read(colorIconLocation);
+			trashIcon = ImageIO.read(trashIconLocation);
 		} catch (IOException e) {
 			e.printStackTrace();
 			PhotoApplication.showStatusText("Resources loading error!");
 		}
-	}
-	
-	public static BufferedImage cloneImage(BufferedImage source) {
-		BufferedImage copy = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
-	    Graphics g = copy.getGraphics();
-	    g.drawImage(source, 0, 0, null);
-	    g.dispose();
-	    return copy;
 	}
 	
 	private static File findResource(String name) {

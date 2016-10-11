@@ -11,22 +11,29 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import custom.GlobalSettings;
@@ -35,6 +42,7 @@ import custom.SavedSettings;
 import model.PhotoApplicationModel;
 import model.PhotoEvent;
 import model.PhotoListener;
+import util.ImageProcessing;
 
 // The main photo browser application
 public class PhotoApplication extends JFrame implements PhotoListener {
@@ -54,7 +62,12 @@ public class PhotoApplication extends JFrame implements PhotoListener {
     JMenuItem originalSizeItem, fitWindowItem, fitWidthItem, fitHeightItem;
     JToolBar tool;
     JButton manageTags;
-    ArrayList<JToggleButton> tags; 
+    ArrayList<JToggleButton> tagsToggle;
+    JDialog tagMenu;
+    JScrollPane tagMenuScrollPane;
+    JPanel tagMenuContent;
+    ArrayList<TagOption> tagOptions;
+    JButton addTag;
     PhotoContainer photoContainer;
     PhotoComponent photoComponent;
     FadePanel controlPanel, controlPanelEditMode;
@@ -119,7 +132,7 @@ public class PhotoApplication extends JFrame implements PhotoListener {
     	setStrokeWidthIcon = new ImageIcon(ResourceManager.lineWidthIcon.getScaledInstance(30, 30, Image.SCALE_SMOOTH));
     	setTextSizeIcon = new ImageIcon(ResourceManager.textSizeIcon.getScaledInstance(30, 30, Image.SCALE_SMOOTH));
     	originalColorImage = ResourceManager.colorIcon;
-    	colorIcon = new ImageIcon(ResourceManager.cloneImage(ResourceManager.colorIcon));
+    	colorIcon = new ImageIcon(ImageProcessing.cloneImage(ResourceManager.colorIcon));
     }
     
     private void setupMenuBar() {
@@ -213,20 +226,61 @@ public class PhotoApplication extends JFrame implements PhotoListener {
     	tool = new JToolBar();
     	add(tool, BorderLayout.NORTH);
     	
-    	manageTags = new JButton("Set Tags");
-    	manageTags.setMinimumSize(new Dimension(80, 30));
-    	manageTags.setPreferredSize(new Dimension(80, 30));
-    	manageTags.setMaximumSize(new Dimension(80, 30));
-    	manageTags.setBackground(new Color(192, 192, 255, 128));
+    	manageTags = new JButton("+Tags");
+    	manageTags.setMinimumSize(new Dimension(50, 30));
+    	manageTags.setPreferredSize(new Dimension(50, 30));
+    	manageTags.setMaximumSize(new Dimension(50, 30));
+    	manageTags.setOpaque(false);
+    	manageTags.addActionListener(
+    			event -> showTagMenu()
+    	);
     	
     	tool.add(manageTags);
     	
-    	tags = new ArrayList<>(); 
-    	tags.add(new JToggleButton("Family"));
-        tags.add(new JToggleButton("Vacation"));
-        tags.add(new JToggleButton("School"));
+    	tagsToggle = new ArrayList<>(); 
+    	tagOptions = new ArrayList<>();
+    	for (String tag: model.album.tags) {
+	    	tagsToggle.add(new JToggleButton(tag));
+	    	tagOptions.add(new TagOption(tag));
+    	}
         
-        for (JToggleButton button : tags) {
+    	setupToolbarTags();
+        
+        tagMenu = new JDialog();
+        tagMenu.setTitle("Manage Tags");
+        tagMenu.setPreferredSize(new Dimension(340, 500));
+        tagMenu.setMinimumSize(new Dimension(340, 100));
+        tagMenu.setMaximumSize(new Dimension(340, Integer.MAX_VALUE));
+        
+        tagMenuContent = new JPanel();
+        BoxLayout columnLayout = new BoxLayout(tagMenuContent, BoxLayout.Y_AXIS);
+        tagMenuContent.setLayout(columnLayout);
+        tagMenuContent.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+        
+        tagMenuScrollPane = new JScrollPane(tagMenuContent);
+        tagMenuScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        tagMenuScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        tagMenu.add(tagMenuScrollPane);
+        
+        addTag = new JButton("Add new tag");
+        addTag.setPreferredSize(new Dimension(300, 30));
+        addTag.setMinimumSize(new Dimension(300, 30));
+        addTag.setMaximumSize(new Dimension(300, 30));
+        addTag.addActionListener(
+        		event -> addNewTag()
+        );
+        tagMenuContent.add(addTag);
+        
+        setupTagMenuOptions();
+        tagMenu.pack();
+    }
+    
+    private void setupToolbarTags() {
+    	while (tool.getComponentCount() > 1) {
+    		tool.remove(1);
+    	}
+    	
+    	for (JToggleButton button : tagsToggle) {
         	button.setMinimumSize(new Dimension(80, 30));
         	button.setPreferredSize(new Dimension(80, 30));
         	button.setMaximumSize(new Dimension(80, 30));
@@ -234,14 +288,32 @@ public class PhotoApplication extends JFrame implements PhotoListener {
         	 
         	button.addItemListener(
         			event -> {
+        				String tag = ((JToggleButton)event.getItem()).getText();
         				if (event.getStateChange() == ItemEvent.SELECTED) {
-        					showStatusText("Catogory " + ((JToggleButton)event.getItem()).getText() + " is selected (Not yet supported).");
+        					model.selectTag(tag);
+        					showStatusText("Catogory " + tag + " is selected.");
         				} else {
-        					showStatusText("Catogory " + ((JToggleButton)event.getItem()).getText() + " is deselected (Not yet supported).");
+        					model.deselectTag(tag);
+        					showStatusText("Catogory " + tag + " is deselected.");
         				}
         			}
         	);
         }
+    	tool.revalidate();
+    	tool.repaint();
+    }
+    
+    private void setupTagMenuOptions() {
+    	while (tagMenuContent.getComponentCount() > 1) {
+    		tagMenuContent.remove(0);
+    	}
+    	
+    	for (TagOption tagOption: tagOptions) {
+    		tagOption.setAlignmentX(0);
+    		tagMenuContent.add(tagOption, tagMenuContent.getComponentCount() - 1);
+        }
+    	tagMenuContent.revalidate();
+    	tagMenuContent.repaint();
     }
     
     private void setupMainArea() {
@@ -382,30 +454,17 @@ public class PhotoApplication extends JFrame implements PhotoListener {
         			Color chosenColor = JColorChooser.showDialog(this, "Choose stroke and text color", photoComponent.currentColor);
         			if (chosenColor != null) {
         				photoComponent.currentColor = chosenColor;
-        				colorImage(photoComponent.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
+        				ImageProcessing.colorImage(photoComponent.currentColor, originalColorImage ,(BufferedImage)colorIcon.getImage());
         			}
         		}
         );
-        colorImage(new Color(0x19, 0x2C, 0x3C), originalColorImage ,(BufferedImage)colorIcon.getImage());
+        ImageProcessing.colorImage(new Color(0x19, 0x2C, 0x3C), originalColorImage ,(BufferedImage)colorIcon.getImage());
         
         setFont.addActionListener(
         		event -> photoComponent.currentFontName = (String)setFont.getSelectedItem()
         );
     }
     
-    private void colorImage(Color c, BufferedImage oldImg, BufferedImage newImg) {
-    	for (int x = 0; x < newImg.getWidth(); x++) {
-    		for (int y = 0; y < newImg.getHeight(); y++) {
-    			int rgb = oldImg.getRGB(x, y);
-    			int b = Integer.remainderUnsigned(rgb, 0x100) ;
-    			int g = (rgb >>> 8) % 0x100;
-    			int r = (rgb >>> 16) % 0x100;
-    			int a = rgb >>> 24;
-    			int newRgb = (a << 24) + ((r * c.getRed() / 255) << 16) + ((g * c.getGreen() / 255) << 8) + (b * c.getBlue() / 255);
-    			newImg.setRGB(x, y, newRgb);
-    		}
-    	}
-    }
 	
     // Button callback
 	public void importImages() {
@@ -434,11 +493,27 @@ public class PhotoApplication extends JFrame implements PhotoListener {
 	public void deleteImages() {
 		if (model.isShowingPhoto()) {
 			if (model.getViewMode() == PhotoApplicationModel.ViewMode.PhotoViewer) {
-				model.deletePhoto();
-				showStatusText("Current photo removed (The original file is still there).");
+				int selection = JOptionPane.showOptionDialog(this, 
+						"Do you really want to remove this photo from your collection?",
+					    "Delete Images",
+					    JOptionPane.YES_NO_CANCEL_OPTION,
+					    JOptionPane.WARNING_MESSAGE,
+					    null, null, null);
+				if (selection == JOptionPane.YES_OPTION) {
+					model.deletePhoto();
+					showStatusText("Current photo removed (The original file is still there).");
+				}
 			} else if (model.getViewMode() == PhotoApplicationModel.ViewMode.Browser) {
-				model.deleteSelectedPhotos();
-				showStatusText("Selected photos removed (The original files are still there).");
+				int selection = JOptionPane.showOptionDialog(this, 
+						"Do you really want to remove all the selected photos from your collection?",
+					    "Delete Images",
+					    JOptionPane.YES_NO_CANCEL_OPTION,
+					    JOptionPane.WARNING_MESSAGE,
+					    null, null, null);
+				if (selection == JOptionPane.YES_OPTION) {
+					model.deleteSelectedPhotos();
+					showStatusText("Selected photos removed (The original files are still there).");
+				}
 			}
 		} else {
 			showStatusText("No photo to remove!");
@@ -447,10 +522,71 @@ public class PhotoApplication extends JFrame implements PhotoListener {
 	
 	public void clearImages() {
 		if (model.isShowingPhoto()) {
-			model.clearPhoto();
-			showStatusText("All annotations and strokes are removed from the photo.");
+			int selection = JOptionPane.showOptionDialog(this, 
+					"Do you really want to remove all the annotations from this photo?",
+				    "Clean Images",
+				    JOptionPane.YES_NO_CANCEL_OPTION,
+				    JOptionPane.WARNING_MESSAGE,
+				    null, null, null);
+			if (selection == JOptionPane.YES_OPTION) {
+				model.clearPhoto();
+				showStatusText("All annotations and strokes are removed from the photo.");
+			}
 		} else {
 			showStatusText("No photo to clean!");
+		}
+	}
+	
+	public void showTagMenu() {
+		tagMenu.setVisible(true);
+		for (TagOption option : tagOptions) {
+			option.setRelatedPhotos(model.selectedPhotos);
+		}
+	}
+	
+	public void addNewTag() {
+		int i = 1;
+		while (model.album.tags.contains("New Tag #" + i)) {
+			i++;
+		}
+		String name = "New Tag #" + i;
+		model.createNewTag(name);
+		tagsToggle.add(new JToggleButton(name));
+		TagOption newOption = new TagOption(name);
+		newOption.setRelatedPhotos(model.selectedPhotos);
+		tagOptions.add(newOption);
+		
+		setupToolbarTags();
+		setupTagMenuOptions();
+		
+		newOption.startEditing();
+	}
+	
+	public void removeTag(String tag) {
+		model.removeTag(tag);
+		for (JToggleButton toggle : tagsToggle) {
+			if (toggle.getText().equals(tag)) {
+				tagsToggle.remove(toggle);
+				break;
+			}
+		}
+		for (TagOption option : tagOptions) {
+			if (option.name.equals(tag)) {
+				tagOptions.remove(option);
+				break;
+			}
+		}
+		setupToolbarTags();
+		setupTagMenuOptions();
+	}
+	
+	public void renameTag(String oldTagName, String newTagName) {
+		model.renameTag(oldTagName, newTagName);
+		for (JToggleButton toggle : tagsToggle) {
+			if (toggle.getText().equals(oldTagName)) {
+				toggle.setText(newTagName);
+				break;
+			}
 		}
 	}
 	
