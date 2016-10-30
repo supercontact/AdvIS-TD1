@@ -79,7 +79,7 @@ public class AnnotatedPhoto implements Serializable {
 	}
 	
 	public void clear() {
-		annotation.removeAllChild();
+		annotation.removeAllChildren();
 		nodeList.clear();
 	}
 }

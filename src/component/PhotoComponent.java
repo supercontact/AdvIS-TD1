@@ -425,7 +425,7 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 			errorPathNode.setPosition(new Point(10, rect.height - 10));
 			errorPathNode.isVisible = !model.getAnnotatedPhoto().imageLoaded && !model.isFlipped();
 			errorPathNode.text = model.getAnnotatedPhoto().imageURL.toString();
-			annotationNode.removeAllChild();
+			annotationNode.removeAllChildren();
 			annotationNode.addChild(model.getAnnotatedPhoto().annotation);
 			annotationNode.clip = new Rectangle(0, 0, w, h);
 			annotationNode.isVisible = model.isFlipped();

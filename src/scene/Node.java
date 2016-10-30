@@ -84,7 +84,7 @@ public class Node implements Serializable {
 			child.parent = null;
 		}
 	}
-	public void removeAllChild() {
+	public void removeAllChildren() {
 		for (Node child : children) {
 			child.parent = null;
 		}

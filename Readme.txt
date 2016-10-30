@@ -1,6 +1,9 @@
-Feature lists:
+PhotoMagician is a photo browser that let you easily organize and annotate photos.
+Select PhotoApplication.java to build the photo browser application. (TestNodes.java is used to test scene-graph structure.) 
 
-Can load multiple photos.
+Here is the complete feature lists:
+
+Load multiple photos.
 Files showed in the fileChooser are filtered by extensions, limit only to image files.
 Add a photo frame to the photo.
 Show a background image that stays fixed when scrolling.
