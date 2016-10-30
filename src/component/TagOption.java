@@ -17,7 +17,6 @@ import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -36,7 +35,7 @@ public class TagOption extends JPanel implements MouseListener, KeyListener, Act
 	public JLabel tagName;
 	public JTextField tagNameEditing;
 	public JButton deleteButton;
-	public JCheckBox checkBox;
+	public TristateCheckBox checkBox;
 	
 	public TagOption(String name) {
 		this.name = name;
@@ -51,7 +50,7 @@ public class TagOption extends JPanel implements MouseListener, KeyListener, Act
 		setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 		setLayout(null);
 		
-		checkBox = new JCheckBox("");
+		checkBox = new TristateCheckBox();
 		tagName = new JLabel(name);
 		tagNameEditing = new JTextField(name);
 		deleteButton = new JButton("Remove Tag");
@@ -100,12 +99,13 @@ public class TagOption extends JPanel implements MouseListener, KeyListener, Act
 			}
 		}
 		if (taggedPhotoCount == photos.size()) {
+			checkBox.setHalfSelected(false);
 			checkBox.setSelected(true);
 		} else if (taggedPhotoCount == 0) {
+			checkBox.setHalfSelected(false);
 			checkBox.setSelected(false);
 		} else {
-			// Should have a third "partial selection" state. To be implemented
-			checkBox.setSelected(false);
+			checkBox.setHalfSelected(true);
 		}
 	}
 	

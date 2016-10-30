@@ -28,6 +28,9 @@ public class ResourceManager {
 	public static BufferedImage textSizeIcon;
 	public static BufferedImage colorIcon;
 	public static BufferedImage trashIcon;
+	public static BufferedImage checkBoxIconSelected;
+	public static BufferedImage checkBoxIconUnselected;
+	public static BufferedImage checkBoxIconHalfselected;
 	
 	private final static File backgroundImageLocation = findResource("bg.jpg");
 	private final static File frameImageLocation = findResource("frame.png");
@@ -43,6 +46,9 @@ public class ResourceManager {
 	private final static File textSizeIconLocation = findResource("textSize.png");
 	private final static File colorIconLocation = findResource("color.png");
 	private final static File trashIconLocation = findResource("trash.png");
+	private final static File checkBoxIconSelectedLocation = findResource("checkbox1.png");
+	private final static File checkBoxIconUnselectedLocation = findResource("checkbox2.png");
+	private final static File checkBoxIconHalfselectedLocation = findResource("checkbox3.png");
 	
 	public static void loadResources() {
 		try {
@@ -61,6 +67,9 @@ public class ResourceManager {
 			textSizeIcon = ImageIO.read(textSizeIconLocation);
 			colorIcon = ImageIO.read(colorIconLocation);
 			trashIcon = ImageIO.read(trashIconLocation);
+			checkBoxIconSelected = ImageIO.read(checkBoxIconSelectedLocation);
+			checkBoxIconUnselected = ImageIO.read(checkBoxIconUnselectedLocation);
+			checkBoxIconHalfselected = ImageIO.read(checkBoxIconHalfselectedLocation);
 		} catch (IOException e) {
 			e.printStackTrace();
 			PhotoApplication.showStatusText("Resources loading error!");
