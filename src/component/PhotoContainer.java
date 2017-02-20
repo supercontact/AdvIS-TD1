@@ -205,6 +205,7 @@ public class PhotoContainer extends JLayeredPane implements MouseMotionListener,
 				icon.setVisible(visible);
 				if (!visible) {
 					icon.setSelected(false);
+					icon.setBounds(0, 0, 0, 0);
 					model.deselectPhoto(icon.photo.getIndex());
 				}
 			}

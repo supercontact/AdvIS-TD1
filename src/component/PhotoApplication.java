@@ -106,7 +106,7 @@ public class PhotoApplication extends JFrame implements PhotoListener {
         
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
        
-        setPreferredSize(new Dimension(1024, 768));
+        setPreferredSize(new Dimension(1114, 907));
         setMinimumSize(new Dimension(300, 400));
         setVisible(true);
        

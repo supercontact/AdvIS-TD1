@@ -477,7 +477,6 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 	// MouseListener & MouseMotionListener & MouseWheelListener: Mouse events
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		requestFocusInWindow();
 		if (model.isShowingPhoto() && !isLocked) {
 			if (e.getClickCount() == 1 && model.isFlipped()) {
 				// Single click: Start editing text
@@ -491,6 +490,7 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 	}
 	@Override
 	public void mousePressed(MouseEvent e) {
+		requestFocusInWindow();
 		prevMouseDragPos = e.getPoint();
 		if (calculateImageRect().contains(prevMouseDragPos) && model.isFlipped() && !isLocked) {
 			canStartDrawing = true;
@@ -499,6 +499,7 @@ public class PhotoComponent extends GraphicalComponent implements MouseListener,
 	}
 	@Override
 	public void mouseReleased(MouseEvent e) {
+		requestFocusInWindow();
 		currentStroke = null;
 		currentPrimitive = null;
 		canStartDrawing = false;
